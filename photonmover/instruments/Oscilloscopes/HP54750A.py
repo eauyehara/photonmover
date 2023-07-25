@@ -1,3 +1,5 @@
+import sys
+sys.path.insert(0, '../..')
 import pyvisa as visa
 import numpy as np
 import time
@@ -5,9 +7,9 @@ import csv
 import struct
 import binascii
 import matplotlib.pyplot as plt
-from photonmover.Interfaces.Instrument import Instrument
+from Interfaces.Instrument import Instrument
 
-GPIB_ADDR = "GPIB1::2::INSTR"  # VISA adress
+GPIB_ADDR = "GPIB0::2::INSTR"  # VISA adress
 
 
 class HP54750A(Instrument):
@@ -26,12 +28,12 @@ class HP54750A(Instrument):
         Initializes the instrument
         :return:
         """
-        print('Opening connnection to HP 54750A oscilloscope')
+        print('Opening connection to HP 54750A oscilloscope')
 
         rm = visa.ResourceManager()
         try:
             self.gpib = rm.open_resource(GPIB_ADDR, timeout=10000)
-        except BaseException:
+        except:
             raise ValueError('Cannot connect to HP 54750A oscilloscope')
 
         self.gpib.write(":TIM:REF LEFT")
@@ -79,7 +81,7 @@ class HP54750A(Instrument):
         :return:
         """
 
-        if channel not in [1, 2, 3, 4]:
+        if channel not in [1, 2, 3 ,4]:
             print("Channel not correct. Doing nothing.")
             return
 
@@ -104,8 +106,7 @@ class HP54750A(Instrument):
             num_avg = 1024
 
         if num_avg % 2 != 0:
-            print(
-                "The number of averages has to be a power of 2. Setting to the closest.")
+            print("The number of averages has to be a power of 2. Setting to the closest.")
             num_avg = round(np.log2(num_avg))
 
         if num_avg == 1:
@@ -123,7 +124,7 @@ class HP54750A(Instrument):
         :return:
         """
 
-        if channel not in [1, 2, 3, 4]:
+        if channel not in [1, 2, 3 ,4]:
             print("Channel not correct. Doing nothing.")
             return
 
@@ -218,13 +219,12 @@ class HP54750A(Instrument):
             x_increment = self.gpib.query_ascii_values("WAV:XINC?")
             x_origin = self.gpib.query_ascii_values("WAV:XOR?")
 
-            t = np.arange(len(data)) * x_increment + x_origin
+            t = np.arange(len(data))*x_increment + x_origin
 
             #plt.plot((t-x_origin)*1e12, data)
-            # plt.show()
+            #plt.show()
 
-            # Save the data if necessary. Each channel will be stored in a
-            # different file
+            # Save the data if necessary. Each channel will be stored in a different file
             if file_name is not None:
 
                 # Create the csv file
@@ -240,21 +240,15 @@ class HP54750A(Instrument):
 
         return all_ts, all_waveforms
 
-    def get_pattern_data(
-            self,
-            channel,
-            pattern_length,
-            data_rate,
-            num_patterns=1,
-            file_name=None):
+    def get_pattern_data(self, channel, pattern_length, data_rate, num_patterns=1, file_name=None):
         """
-        Records a total of 'num_patterns' patterns.
+        Records a total of 'num_patterns' patterns. 
         This function concatenates calls to read_waveform with different time origins so we can record data for longer
         than what is shown on the screen.
         :param channels: the channel to record
         :param pattern_length: the length (in bits) of the pattern we are applying
         :param data_rate: the data rate of the pattern (1/bit_duration)
-        :param num_patterns: the number of patterns we want to record.
+        :param num_patterns: the number of patterns we want to record. 
         :param file_name: name of the csv file that will be created with the data
         The total time recorded is num_patterns*pattern_length/data_rate
         """
@@ -266,21 +260,21 @@ class HP54750A(Instrument):
         t_vec = []
         wf_vec = []
 
-        total_time = num_patterns * pattern_length / data_rate
+        total_time = num_patterns*pattern_length/data_rate
 
         while not done:
-            # print(time_origin)
+            #print(time_origin)
             self.set_time_origin(time_origin)
-            ts, wf = self.read_waveform([channel], file_name=None)
+            ts, wf = self.read_waveform([channel], file_name = None)
             #plt.plot(ts[0], wf[0])
-            # plt.show()
+            #plt.show()
             t_vec.extend(ts[0])
             wf_vec.extend(wf[0])
 
             t = ts[0]
-            time_origin = t[-1] + (t[1] - t[0])
+            time_origin = t[-1] + (t[1]-t[0])
 
-            # if time_origin > pattern_length/data_rate:
+            #if time_origin > pattern_length/data_rate:
             #    time_origin = time_origin - pattern_length/data_rate
 
             total_time_recorded = total_time_recorded + (t[-1] - t[0])
@@ -288,8 +282,7 @@ class HP54750A(Instrument):
             if total_time_recorded > total_time:
                 done = True
 
-         # Save the data if necessary. Each channel will be stored in a
-         # different file
+         # Save the data if necessary. Each channel will be stored in a different file
         if file_name is not None:
 
             # Create the csv file
@@ -301,7 +294,49 @@ class HP54750A(Instrument):
                 writer.writerow(wf_vec)
 
         return t_vec, wf_vec
+        
+    def jitter_measurment(self, channels, num_patterns, file_name=None):
+        """
+        Acquire num_patterns traces with max number of waveform data points for building up jitter histogram
+        """
+        #Set number of points to read to max value
+        num_points = 4096
+        self.gpib.write("ACQ:POIN %d" %num_points)
 
+        #Read num_patterns traces and store into single csvfile (first row: time, subsequent rows: acquisitions)
+        all_ts = []
+        all_waveforms = []
+
+        # Set to send ascii
+        self.gpib.write(":WAV:FORM ASCII")
+
+        for c in channels:
+            if c not in [1, 2, 3, 4]:
+                print("Specified channel not correct. Skipping it")
+                continue
+
+            if file_name is not None:
+                # Create the csv file
+                file_name_chan = file_name + ".csv"
+
+            # Choose source
+            self.gpib.write(":WAV:SOUR CHAN%d" % c)
+
+            x_increment = self.gpib.query_ascii_values("WAV:XINC?")
+            x_origin = self.gpib.query_ascii_values("WAV:XOR?")
+            t = np.arange(num_points) * x_increment + x_origin
+
+            with open(file_name_chan, 'w+') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(t)
+
+                for pat in range(num_patterns):
+                    data = self.gpib.query_ascii_values("WAV:DATA?")
+                    writer.writerow(data)
+                    all_waveforms.append(data)
+                    time.sleep(1.0)
+                    
+        all_ts.append(t)
 
 if __name__ == '__main__':
 
@@ -309,11 +344,16 @@ if __name__ == '__main__':
     osc.initialize()
 
     # t, wf = osc.get_pattern_data(1, pattern_length=127, data_rate=1.5e9, num_patterns=10,
-    #    file_name ='straight_spoke--Vbias=0.7V--Idc=0.77uA--Vpp=0.5V--att=44dB--f=1.5Gbps--avgs=256')
-    #plt.plot(t, wf)
+    #    file_name ='test')
+    # plt.plot(t, wf)
     # plt.show()
-    # osc.autoscale()
-    # time.sleep(1)
-    osc.read_waveform([1], 'trial')
+    #osc.autoscale()
+    #time.sleep(1)
 
+    # osc.read_waveform([1], 'SRSmicroscope_polycarbonate_QDLaser_OELand1072_818-BB-35F_avgOFF')
+    osc.jitter_measurment([1], 5, "test_20psdiv")
+
+    # osc.read_waveform([1], 'devPolStable_0V_isolator_polController_GTpol_OEland1040_8mW_avg64') #atten_XPDV2320R_3.3V
+    # osc.read_waveform([1], 'ImpulseResponse_818-BB-35F_MiraFemto_20uW_880nm_avg64_1mPM780_50psdiv') #XPDV2320R_3.3V
     osc.close()
+
