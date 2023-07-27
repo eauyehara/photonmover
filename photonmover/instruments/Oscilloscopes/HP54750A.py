@@ -294,18 +294,25 @@ class HP54750A(Instrument):
                 writer.writerow(wf_vec)
 
         return t_vec, wf_vec
-        
-    def jitter_measurment(self, channels, num_patterns, file_name=None):
-        """
-        Acquire num_patterns traces with max number of waveform data points for building up jitter histogram
-        """
-        #Set number of points to read to max value
-        num_points = 4096
-        self.gpib.write("ACQ:POIN %d" %num_points)
 
-        #Read num_patterns traces and store into single csvfile (first row: time, subsequent rows: acquisitions)
+    def read_histogram(self, channels, file_name=None):
+        """
+        Reads the waveform and histogram currently shown on the screen in the specified channels (assumes histogram enabled)
+        :param channels: list with the channels whose waveform we w ant to obtain.
+        :param file_name: if specified, it will save the data with the specified file name. Do not include the ".csv".
+        :return: 2 lists, each with n elemnts, where n is the number of channels.
+                List 1: [preamble_channel1, preamble_channel2, ...]
+                List 2: [channel1_data, channel2_data, ...]
+                csv file format: 1st row: time, 2nd row: waveform, 3rd row: hist time, 4th row: histogram, 5th row: histogram parameters
+                    %histogram parameters: [x1_pos x2_pos y1_pos y2_pos pp std]
+        """
+
         all_ts = []
         all_waveforms = []
+
+        # Set number of points to read to max value
+        num_points = 4096
+        self.gpib.write("ACQ:POIN %d" % num_points)
 
         # Set to send ascii
         self.gpib.write(":WAV:FORM ASCII")
@@ -315,43 +322,64 @@ class HP54750A(Instrument):
                 print("Specified channel not correct. Skipping it")
                 continue
 
-            if file_name is not None:
-                # Create the csv file
-                file_name_chan = file_name + ".csv"
-
             # Choose source
             self.gpib.write(":WAV:SOUR CHAN%d" % c)
+            data = self.gpib.query_ascii_values("WAV:DATA?")
 
+            # Create time array for waveform
             x_increment = self.gpib.query_ascii_values("WAV:XINC?")
             x_origin = self.gpib.query_ascii_values("WAV:XOR?")
-            t = np.arange(num_points) * x_increment + x_origin
+            t = np.arange(len(data)) * x_increment + x_origin
 
-            with open(file_name_chan, 'w+') as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerow(t)
+            # Choose histogram as source
+            self.gpib.write(":WAV:SOUR HIST")
+            # self.gpib.write("WAV:DATA?")
+            hist = self.gpib.query_ascii_values(":WAV:DATA?")
+            # remove Nan and 9.99e37 entries where histogram has no values
+            hist_arr = np.array(hist)
+            hist_arr[np.isnan(hist_arr)] = 0
+            hist_arr[hist_arr > 1e30] = 0
 
-                for pat in range(num_patterns):
-                    data = self.gpib.query_ascii_values("WAV:DATA?")
+            # Create time array for histogram
+            hist_x_increment = self.gpib.query_ascii_values("WAV:XINC?")
+            hist_x_origin = self.gpib.query_ascii_values("WAV:XOR?")
+            t_hist = np.arange(len(data)) * hist_x_increment + hist_x_origin
+
+            #Read histogram-related parameters
+            x1_pos = self.gpib.query_ascii_values(":HIST:WIND:X1P?")
+            x2_pos = self.gpib.query_ascii_values(":HIST:WIND:X2P?")
+            y1_pos = self.gpib.query_ascii_values(":HIST:WIND:Y1P?")
+            y2_pos = self.gpib.query_ascii_values(":HIST:WIND:Y2P?")
+            pp = self.gpib.query_ascii_values(":MEASURE:HIST:PP?")
+            std = self.gpib.query_ascii_values(":MEASURE:HIST:STDD?")
+
+            hist_params = x1_pos + x2_pos + y1_pos + y2_pos + pp + std
+
+            # Save the data if necessary. Each channel will be stored in a different file
+            if file_name is not None:
+
+                # Create the csv file
+                file_name_chan = file_name + "_channel_" + str(c) + ".csv"
+
+                with open(file_name_chan, 'w+') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(t)
                     writer.writerow(data)
-                    all_waveforms.append(data)
-                    time.sleep(1.0)
-                    
-        all_ts.append(t)
+                    writer.writerow(t_hist)
+                    writer.writerow(hist_arr)
+                    writer.writerow(hist_params)
+
+            all_ts.append(t)
+            all_waveforms.append(data)
+
+        return all_ts, all_waveforms
 
 if __name__ == '__main__':
 
     osc = HP54750A()
     osc.initialize()
 
-    # t, wf = osc.get_pattern_data(1, pattern_length=127, data_rate=1.5e9, num_patterns=10,
-    #    file_name ='test')
-    # plt.plot(t, wf)
-    # plt.show()
-    #osc.autoscale()
-    #time.sleep(1)
-
-    # osc.read_waveform([1], 'SRSmicroscope_polycarbonate_QDLaser_OELand1072_818-BB-35F_avgOFF')
-    osc.jitter_measurment([1], 5, "test_20psdiv")
+    osc.read_histogram([1], 'hist')
 
     # osc.read_waveform([1], 'devPolStable_0V_isolator_polController_GTpol_OEland1040_8mW_avg64') #atten_XPDV2320R_3.3V
     # osc.read_waveform([1], 'ImpulseResponse_818-BB-35F_MiraFemto_20uW_880nm_avg64_1mPM780_50psdiv') #XPDV2320R_3.3V
