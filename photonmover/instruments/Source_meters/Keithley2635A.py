@@ -4,7 +4,7 @@ import time
 from photonmover.Interfaces.SourceMeter import SourceMeter
 from photonmover.Interfaces.Instrument import Instrument
 
-GPIB_ADDR = "GPIB1::29::INSTR"  # GPIB adress
+GPIB_ADDR = "GPIB0::29::INSTR"  # GPIB adress
 DEFAULT_CURRENT_COMPLIANCE = 0.1   # Default current compliance in A
 DEFAULT_VOLTAGE_COMPLIANCE = 5  # Default current compliance in V
 
@@ -36,13 +36,13 @@ class Keithley2635A(Instrument, SourceMeter):
         try:
             self.gpib = rm.open_resource(GPIB_ADDR, timeout=30000)
         except BaseException:
-            raise ValueError('Cannot connect to the Keysight Source meter')
+            raise ValueError('Cannot connect to the Keitheley Source meter')
 
         self.init_function()
 
     def close(self):
         print('Disconnecting Keithley source meter')
-        self.turn_off()
+        # self.turn_off()
         self.gpib.close()
 
     def turn_on(self):
@@ -236,11 +236,22 @@ class Keithley2635A(Instrument, SourceMeter):
         else:
             self.gpib.write('smua.measure.filter.enable = smua.FILTER_OFF')
 
+    def linear_volt_sweep(self, volt_list, settling_time, num_points):
+        """
+        Take a linear voltage sweep with the following parameters
+        :param volt_list: string of format '{V1, V2, V3,...}' [V]
+        :param settling_time: float [s]
+        :param num_points: integer
+        """
+        self.gpib.write('SweepVListMeasureI(smua, %s, %f, %d)' % (volt_list, settling_time, num_points))
+
 
 if __name__ == '__main__':
-    sm = Keithley2635A()
+    sm = Keithley2635A(current_compliance=0.003, voltage_compliance=10)
     sm.initialize()
-    while True:
-        print(sm.measure_current())
-        time.sleep(1)
+    # sm.set_voltage(1)
+    sm.linear_volt_sweep(volt_list='{5,4,3,2,1}', settling_time=0.5, num_points=5)
+    # while True:
+    #     print(sm.measure_current())
+    #     time.sleep(1)
     sm.close()
