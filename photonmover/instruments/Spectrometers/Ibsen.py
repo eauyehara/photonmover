@@ -5,6 +5,7 @@ Driver module for Ibsen spectrometers.
 """
 import numpy as np
 from time import sleep
+from photonmover.Interfaces.Instrument import Instrument
 
 
 _INST_PARAMS_ = ['visa_address']

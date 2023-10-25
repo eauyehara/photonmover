@@ -1,8 +1,9 @@
-import sys
-sys.path.insert(0, '../..')
+# import sys
+# sys.path.insert(0, '../..')
 import pyvisa as visa
 import time
-from Interfaces.Instrument import Instrument
+
+from photonmover.Interfaces.Instrument import Instrument
 
 GPIB_ADDR = "USB0::0x2A8D::0x1902::MY61001521::INSTR"  # VISA adress
 DEFAULT_CURRENT_LIMIT = 0.003  # Default current limit in A
