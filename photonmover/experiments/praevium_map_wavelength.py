@@ -1,13 +1,12 @@
-import sys
-sys.path.insert(0, '..')
-from Interfaces.Experiment import Experiment
-from utils.plot_utils import plot_graph
+from photonmover.Interfaces.Experiment import Experiment
+from photonmover.utils.plot_utils import plot_graph
 
 # Interfaces/instruments necessary for the experiment
 # - You use an Interface if any instrument of that category can be used
 # - You use a specific instrument if you can only use that specific model
-from instruments.Optical_spectrum_analyzers.HP70951B import HP70951B
-from instruments.Power_Supplies.KeysightE36106B import KeysightE36106B
+from photonmover.instruments.Optical_spectrum_analyzers.HP70951B import HP70951B
+# from photonmover.instruments.Power_Supplies.KeysightE36106B import KeysightE36106B
+from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
 
 # General imports
 import time
@@ -44,7 +43,8 @@ class praevium_map_wavelength(Experiment):
         for instr in instrument_list:
             if isinstance(instr, HP70951B):
                 self.osa = instr
-            if isinstance(instr, KeysightE36106B):
+            # if isinstance(instr, KeysightE36106B):
+            if isinstance(instr, Keithley2635A):
                 self.ps = instr
 
         if (self.osa is not None) and (self.ps is not None):
@@ -104,6 +104,15 @@ class praevium_map_wavelength(Experiment):
         print(np.shape(spectrum_array))
         print('Finished voltage sweep')
         print('-----------------------------')
+
+        #Ramp back to initial voltage
+        reverse_voltage_list = list(voltage_list)
+        reverse_voltage_list.reverse()
+        reverse_voltage_str = str(reverse_voltage_list).replace('[', '{')
+        reverse_voltage_str = reverse_voltage_str.replace(']', '}')
+
+        ps.linear_volt_sweep(volt_list=reverse_voltage_str, settling_time=.3, num_points=len(reverse_voltage_list))
+
 
         if filename is not None:
             # Save the data in a csv file
@@ -165,10 +174,11 @@ if __name__ == '__main__':
     # SAFETY LIMITS
     i_limit = 0.003  # current limit
 
-
     # OTHER PARAMETERS
-    device = 'Dev2_5mW'
-    pump_laser = 'CW976'
+    device = 'Dev1'
+    pump_laser = 'OEland1040'
+    pump_power = 3.0 #mW
+    IL = 0.70
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
@@ -178,7 +188,8 @@ if __name__ == '__main__':
     # ------------------------------------------------------------
 
     # INSTRUMENTS
-    ps = KeysightE36106B(current_limit=i_limit)
+    # ps = KeysightE36106B(current_limit=i_limit)
+    ps = Keithley2635A(current_compliance=0.00001, voltage_compliance=61) #A, V
     osa = HP70951B()
 
     # Initialize instruments
@@ -186,8 +197,8 @@ if __name__ == '__main__':
     osa.initialize()
 
     # file_name = 'LL_dev1_50V_pm1258_Solstis980nm'  # Filename where to save csv data
-    file_name = "waveMap_%s_%d-%dV_%s" % (
-        device, init_voltage, end_voltage, pump_laser)  # Filename where to save csv data
+    file_name = "waveMap_%s_%d-%dV_%s_%3.2f" % (
+        device, init_voltage, end_voltage, pump_laser, pump_power*IL)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
     instr_list = [osa, ps]

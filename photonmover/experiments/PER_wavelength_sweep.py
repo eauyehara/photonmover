@@ -5,7 +5,8 @@ from photonmover.utils.plot_utils import plot_graph
 # - You use an Interface if any instrument of that category can be used
 # - You use a specific instrument if you can only use that specific model
 from photonmover.instruments.Power_meters.Thorlabs import ThorlabsPowerMeter
-from photonmover.instruments.Power_Supplies.AgilentE3633A import AgilentE3633A
+# from photonmover.instruments.Power_Supplies.KeysightE36106B import KeysightE36106B
+from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
 
 # General imports
 import time
@@ -15,11 +16,11 @@ import csv
 from ctypes import create_string_buffer, c_int16, c_double, byref, c_char_p, c_bool
 
 # Power meter sensors
-PUMP_SENSOR = b'S150C'  # 350-1100nm
-VCSEL_SENSOR = b'S122C' #b'S155C'  # 800-1700nm
+XPOL_SENSOR = b'S122C'  # 800-1700nm
+PPOL_SENSOR = b'S122C'  # 800-1700nm
 
 
-class LL_curve(Experiment):
+class PER_wavelength_sweep(Experiment):
 
     def __init__(self, instrument_list, visa_lock=None):
         """
@@ -30,8 +31,8 @@ class LL_curve(Experiment):
         # It is always good practice to initialize variables in the init
 
         # Instruments
-        self.pm_pump = None
-        self.pm_VCSEL = None
+        self.pm_ppol = None
+        self.pm_xpol = None
         self.ps = None
 
         self.data = None
@@ -56,22 +57,23 @@ class LL_curve(Experiment):
         pFlags = c_int16()
 
         # set flags to monitor if pump or VCSEL power meter assigned (for case where both power meters have same sensor)
-        pm_pump_set = 0
-        pm_VCSEL_set = 0
+        pm_xpol_set = 0
+        pm_ppol_set = 0
 
         for instr in instrument_list:
             if isinstance(instr, ThorlabsPowerMeter):
                 instr.getSensorInfo(name, snr, message, byref(pType), byref(pStype), byref(pFlags))
-                if (c_char_p(name.raw).value == PUMP_SENSOR) and not pm_pump_set:
-                    self.pm_pump = instr
-                    pm_pump_set = 1
-                elif (c_char_p(name.raw).value == VCSEL_SENSOR) and not pm_VCSEL_set:
-                    self.pm_VCSEL = instr
-                    pm_VCSEL_set = 1
-            if isinstance(instr, AgilentE3633A):
+                if (c_char_p(name.raw).value == PPOL_SENSOR) and not pm_ppol_set:
+                    self.pm_ppol = instr
+                    pm_ppol_set = 1
+                elif (c_char_p(name.raw).value == XPOL_SENSOR) and not pm_xpol_set:
+                    self.pm_xpol = instr
+                    pm_xpol_set = 1
+            # if isinstance(instr, KeysightE36106B):
+            if isinstance(instr, Keithley2635A):
                 self.ps = instr
 
-        if (self.pm_pump is not None) and (self.pm_VCSEL is not None) and (self.ps is not None):
+        if (self.pm_ppol is not None) and (self.pm_xpol is not None) and (self.ps is not None):
             return True
         else:
             return False
@@ -80,13 +82,13 @@ class LL_curve(Experiment):
         """
         Returns a string with a brief summary of the experiment.
         """
-        return "Performs an LL measuremet: sweeps pump power by tuning VOA transmission with a power supply and measures VCSEL power.  Pump power is measured with a 1% tap to a Thorlabs power meter."
+        return "Performs a PER measurement: sweeps VCSEL tuning voltage while measures VCSEL power thru polarizer.  Pump power is monitored with a 1% tap to a Thorlabs power meter."
 
     def get_name(self):
         """
         Returns a string with the experiment name
         """
-        return "LL_curve"
+        return "PER_wavelength_sweep"
         
     def perform_experiment(self, params, filename=None):
         """
@@ -99,58 +101,52 @@ class LL_curve(Experiment):
 
         params = self.check_all_params(params)
 
-        pump_wavelength = params["pump_wavelength"]
         VCSEL_wavelength = params["VCSEL_wavelength"]
         voltage = params["voltage"]
-        IL = params["IL"]
 
         # Set power meter wavelengths
         attribute = c_int16(0) #set wavelength
-        meas_pump_wavelength = c_double()
-        meas_VCSEL_wavelength = c_double()
+        meas_xpol_wavelength = c_double()
+        meas_ppol_wavelength = c_double()
 
-        self.pm_pump.getWavelength(attribute, byref(meas_pump_wavelength))
-        self.pm_VCSEL.getWavelength(attribute, byref(meas_VCSEL_wavelength))
-        if meas_pump_wavelength is not pump_wavelength:
-            self.pm_pump.setWavelength(c_double(pump_wavelength))
-        if meas_VCSEL_wavelength is not VCSEL_wavelength:
-            self.pm_VCSEL.setWavelength(c_double(VCSEL_wavelength))
+        self.pm_xpol.getWavelength(attribute, byref(meas_xpol_wavelength))
+        self.pm_ppol.getWavelength(attribute, byref(meas_ppol_wavelength))
+        if meas_ppol_wavelength is not VCSEL_wavelength:
+            self.pm_ppol.setWavelength(c_double(VCSEL_wavelength))
+        if meas_xpol_wavelength is not VCSEL_wavelength:
+            self.pm_xpol.setWavelength(c_double(VCSEL_wavelength))
 
-        print('Measured VCSEL pm wavelength is %d nm' % meas_VCSEL_wavelength.value)
-        pump_power_list = []
-        VCSEL_power_list = []
+        print('Measured VCSEL pm wavelength is %d nm' % meas_xpol_wavelength.value)
+        ppol_power_list = []
+        xpol_power_list = []
         meas_volt_list = []
 
         # Sweep VOA voltage and get power
         for volt in voltage:
 
-            print('Setting VOA to %.4f V...' % volt)
+            print('Setting power supply voltage to %.4f V...' % volt)
             # Set the voltage
             self.ps.set_voltage(volt)
 
             meas_volt = self.ps.measure_voltage()
-            print('VOA voltage set to %0.4f V' % meas_volt)
+            print('Voltage set to %0.4f V' % meas_volt)
             meas_volt_list.append(meas_volt) #[V]
-
-            meas_curr = self.ps.measure_current()
-            print('VOA current is %0.4f A' % meas_curr)
 
             # Wait s
             time.sleep(0.5)
 
-            #Read pump power through 1% tap, scale to power in 99% tap
-            [pump_power_tap, _] = self.pm_pump.get_powers()
-            pump_power = pump_power_tap*100*IL  #scale to full power
-            pump_power_list.append(pump_power)  # [W]
-            print('Pump power at %0.6f mW' % (pump_power*1e3))
+            # Get VCSEL power at cross and parallel polarizations
+            [ppol_power, _] = self.pm_ppol.get_powers()
+            ppol_power_list.append(ppol_power) #[W]
+            print('Measured PPol power is %.6f mW' % (ppol_power*1e3))
 
-            # Get VCSEL power
-            [VCSEL_power, _] = self.pm_VCSEL.get_powers()
-            VCSEL_power_list.append(VCSEL_power) #[W]
-            print('Measured VCSEL power is %.6f mW' % (VCSEL_power*1e3))
+            [xpol_power, _] = self.pm_xpol.get_powers()
+            xpol_power_list.append(xpol_power)  # [W]
+            print('Measured XPol power is %.6f mW' % (xpol_power * 1e3))
 
+        PER = 10*np.log10(np.array(ppol_power_list) / np.array(xpol_power_list))
 
-        print('Finished LL curve')
+        print('Finished PER wavelength sweep')
         print('-----------------------------')
 
         if filename is not None:
@@ -164,19 +160,20 @@ class LL_curve(Experiment):
             with open(complete_filename, 'w+') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(meas_volt_list)  #[V]
-                writer.writerow(pump_power_list)  #[W]
-                writer.writerow(VCSEL_power_list)  #[W]
+                writer.writerow(ppol_power_list)  #[W]
+                writer.writerow(xpol_power_list)  #[W]
+                writer.writerow(PER) #[dB]
 
-        self.data = [pump_power_list, VCSEL_power_list]
+        self.data = [meas_volt_list, PER]
 
-        return [pump_power_list, VCSEL_power_list]
+        return [meas_volt_list, PER]
     
     def required_params(self):
         """
         Returns a list with the keys that need to be specified in the params dictionary, in order for
         a measurement to be performed
         """
-        return ["pump_sensor", "VCSEL_sensor", "pump_wavelength", "VCSEL_wavelength", "voltage", "IL"]
+        return ["xpol_sensor", "ppol_sensor", "VCSEL_wavelength", "voltage"]
 
     def plot_data(self, canvas_handle, data=None):
         
@@ -186,10 +183,10 @@ class LL_curve(Experiment):
             else:
                 raise ValueError('plot_data was called before performing the experiment or providing data')
         
-        pump_power = data[0]
-        VCSEL_power = data[1]
+        volt_list = data[0]
+        PER = data[1]
 
-        plot_graph(x_data=pump_power, y_data=VCSEL_power, canvas_handle=canvas_handle, xlabel='Pump Power (mW)', ylabel='VCSEL Power (mW)', title='LL curve', legend=None)
+        plot_graph(x_data=volt_list, y_data=PER, canvas_handle=canvas_handle, xlabel='Tuning Voltage (V)', ylabel='PER (dB)', title='PER sweep', legend=None)
 
 
 
@@ -202,7 +199,7 @@ class Window(QtGui.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.setGeometry(100, 100, 1000, 500)
-        self.setWindowTitle("LL Curve")
+        self.setWindowTitle("PER Sweep")
 
         # Menu definition
         mainMenu = self.menuBar()
@@ -217,8 +214,8 @@ class Window(QtGui.QMainWindow):
 
         # plot widget
         self.p_power = pg.PlotWidget()
-        self.xlabel = self.p_power.setLabel('bottom', text='Pump Power', units='W')
-        self.ylabel = self.p_power.setLabel('left', text='VCSEL Power', units='W')
+        self.xlabel = self.p_power.setLabel('bottom', text='Tuning Voltage', units='V')
+        self.ylabel = self.p_power.setLabel('left', text='PER', units='dB')
         self.layout.addWidget(self.p_power, 0, 0)
 
         self.p_power_handle = self.p_power.plot(pen=(1, 3))
@@ -238,30 +235,33 @@ if __name__ == '__main__':
     # POWER METER SETTINGS
     # Check that power meter sensors (declared as global variables up top) are accurate
     # Note: pump sensor and VCSEL sensor can be the same type
-    pump_wavelength = 980 #nm
-    VCSEL_wavelength = 1269  #nm
-
-    IL = 0.760 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
+    pump_wavelength = 976 #nm
+    VCSEL_wavelength = 1252  #nm
 
     #OTHER DEVICE PARAMETERS
-    device = 'Dev1'
-    tuning_voltage = 0 # [V]
+    device ='bf_PolStable'
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.653  # [V] Maximum transmission on VOA
-    num_points = 250  # Number of points between init and end current
-    volt_list = np.linspace(init_voltage, end_voltage, num_points)
+    pump_power = 12.6 # [mW]
+    IL = 0.78
+    start_voltage = 0 # [V] Start tuning voltage in sweep
+    end_voltage = -40  # [V] End tuning voltage in sweep
+    increment = 1 # [V]
+    if end_voltage > 0:
+        volt_list = np.arange(start_voltage, end_voltage+1, increment)
+    elif end_voltage <0:
+        volt_list = np.arange(start_voltage, end_voltage-1, -increment)
+    print(volt_list)
     # ------------------------------------------------------------
 
     # INSTRUMENTS
-    ps = AgilentE3633A(current_limit=i_limit)
+    # ps = KeysightE36106B(current_limit=i_limit)
+    ps = Keithley2635A(current_compliance=0.002, voltage_compliance=151)
     pm1 = ThorlabsPowerMeter()
     pm2 = ThorlabsPowerMeter()
 
     # Set up power supply
     ps.initialize()
-
 
     # Set up power meters
     pm1.initialize(deviceIndex=0)
@@ -269,26 +269,24 @@ if __name__ == '__main__':
     pm1.setPowerAutoRange(c_int16(1))  #enable autorange
     pm2.setPowerAutoRange(c_int16(1)) #enable autorange
 
-    #file_name = 'LL_dev1_50V_pm1258_Solstis980nm'  # Filename where to save csv data
-    file_name = "LL_%s_%dV_pm%d_pump%d" % (device, tuning_voltage, VCSEL_wavelength, pump_wavelength) # Filename where to save csv data
+    file_name = "PER_%s_%d-%dV_pm%d_OELand%dnm_%2.3fmW" % (device, start_voltage, end_voltage, VCSEL_wavelength, pump_wavelength, pump_power*IL) # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
     instr_list = [pm1, pm2, ps]
-    params = {"pump_sensor": PUMP_SENSOR, "VCSEL_sensor": VCSEL_SENSOR, "pump_wavelength": pump_wavelength, "VCSEL_wavelength": VCSEL_wavelength, "voltage": volt_list, "IL": IL}
-    exp = LL_curve(instr_list)
+    params = {"xpol_sensor": XPOL_SENSOR, "ppol_sensor": PPOL_SENSOR, "VCSEL_wavelength": VCSEL_wavelength, "voltage": volt_list}
+    exp = PER_wavelength_sweep(instr_list)
 
     # RUN IT
-    [pump_power_list, VCSEL_power_list] = exp.perform_experiment(params, filename=file_name)
+    [volt_list, PER_list] = exp.perform_experiment(params, filename=file_name)
 
 
     # PLOT DATA
     app = QtGui.QApplication(sys.argv)
     GUI = Window()
-    GUI.plot(pump_power_list, VCSEL_power_list)
+    GUI.plot(volt_list, PER_list)
     sys.exit(app.exec_())
 
     # CLOSE INSTRUMENTS
     pm1.close()
     pm2.close()
     ps.close()
-
