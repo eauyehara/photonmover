@@ -1,10 +1,8 @@
-import sys
-sys.path.insert(0, '../..')
 import pyvisa as visa
 import numpy as np
 import time
 import csv
-from Interfaces.Instrument import Instrument
+from photonmover.Interfaces.Instrument import Instrument
 
 
 GPIB_ADDR = "USB0::0x1AB1::0x04B1::DS4A201100188::INSTR"  # VISA adress

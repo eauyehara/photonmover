@@ -1,5 +1,3 @@
-import sys
-sys.path.insert(0, '../..')
 import pyvisa as visa
 import numpy as np
 import time
@@ -7,7 +5,7 @@ import csv
 import struct
 import binascii
 import matplotlib.pyplot as plt
-from Interfaces.Instrument import Instrument
+from photonmover.Interfaces.Instrument import Instrument
 
 GPIB_ADDR = "GPIB0::2::INSTR"  # VISA adress
 
@@ -379,9 +377,9 @@ if __name__ == '__main__':
     osc = HP54750A()
     osc.initialize()
 
-    osc.read_histogram([1], 'hist')
+    # osc.read_histogram([1], 'hist_bf_PolStable_BOA_50V_5mW_50psdiv')
 
-    # osc.read_waveform([1], 'devPolStable_0V_isolator_polController_GTpol_OEland1040_8mW_avg64') #atten_XPDV2320R_3.3V
-    # osc.read_waveform([1], 'ImpulseResponse_818-BB-35F_MiraFemto_20uW_880nm_avg64_1mPM780_50psdiv') #XPDV2320R_3.3V
+    osc.read_waveform([1], 'BOA_240mA_1250nm_bf_PolStable_OEland1040_5mW_50psdiv_avg64')
+
     osc.close()
 

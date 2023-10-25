@@ -1,10 +1,8 @@
-import sys
-sys.path.insert(0, '../..')
 import pyvisa as visa
 import numpy as np
 import time
 import csv
-from Interfaces.Instrument import Instrument
+from photonmover.Interfaces.Instrument import Instrument
 import binascii
 
 GPIB_ADDR = "GPIB0::15::INSTR"  # VISA adress
@@ -290,6 +288,6 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([1], 'test')
+    osc.read_waveform([1, 2], 'bf_PolStable_100V_OEland1040_1.18mW_simultaneousPol_80ns_8pspt_1')
 
     osc.close()
