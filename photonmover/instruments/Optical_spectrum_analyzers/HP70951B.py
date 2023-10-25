@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import csv
 
 
-GPIB_ADDRESS = "GPIB1::23::INSTR"
+GPIB_ADDRESS = "GPIB0::23::INSTR"
 
 
 class HP70951B(MSA, Instrument):
@@ -124,12 +124,10 @@ class HP70951B(MSA, Instrument):
         """
 
         if print_info:
-            print(
-                'When you press enter, the PD measurement will be taken. Before that, you should have:')
+            print('When you press enter, the PD measurement will be taken. Before that, you should have:')
             print('1. Connected the front-panel MONOCHROMATOR OUTPUT to the PHOTODETECTOR INPUT with a fiber-optic cable.')
             print('2. Pressed STORE THRU --> B')
-            input(
-                '3. Connected the PD output to the TRANS-Z IN of the rear panel of the OSA')
+            input('3. Connected the PD output to the TRANS-Z IN of the rear panel of the OSA')
 
         self.gpib.write('PDMEAS ON;')
 
@@ -162,8 +160,7 @@ class HP70951B(MSA, Instrument):
             self.gpib.write('RLPOS %d;' % ref_pos)
 
     def set_sensitivity(self, sens):
-        # Sensitivity is in the amplitude units (either W (if linear mode) or
-        # dBm (if log mode))
+        # Sensitivity is in the amplitude units (either W (if linear mode) or dBm (if log mode))
         self.write('SENS %.4f;' % sens)
 
     def set_sweep_time(self, sweep_time):
@@ -199,10 +196,12 @@ class HP70951B(MSA, Instrument):
 
         wavs = np.linspace(init_wl, end_wl, len(amps))
 
-        # Save the data if necessary. Each channel will be stored in a
-        # different file
+        # Save the data if necessary. Each channel will be stored in a different file
         if filename is not None:
-            with open(filename, 'w+') as csvfile:
+            # Create the csv file
+            full_filename = filename + ".csv"
+
+            with open(full_filename, 'w+') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(wavs)
                 writer.writerow(amps)
@@ -261,25 +260,14 @@ class HP70951B(MSA, Instrument):
 
         return [wl[0], amp[0]]
 
-    def perform_PD_measurement(
-            self,
-            init_wl,
-            end_wl,
-            sensitivity,
-            video_bw='AUTO',
-            res_bw='10NM',
-            filename=None):
+    def perform_PD_measurement(self, init_wl, end_wl, sensitivity, video_bw='AUTO', res_bw='10NM', filename=None):
         """
         Sets up a PD responsivity measurement and performs it. If filename is specified, it saves a csv file with the measured data.
         If we don't want to affect any of the parameters, simply set it to None,
         """
 
         # First, set up measurement
-        self.set_wl_axis(
-            center=None,
-            span=None,
-            start_wl=init_wl,
-            end_wl=end_wl)
+        self.set_wl_axis(center=None, span=None, start_wl=init_wl, end_wl=end_wl)
         if sensitivity is not None:
             self.set_sensitivity(sensitivity)
         self.set_acq_bandwidth(res_bw=res_bw, video_bw=video_bw)
@@ -302,24 +290,44 @@ class HP70951B(MSA, Instrument):
         [out_wl, R_pd] = self.read_data(trace='A', filename=None)
 
         if filename is not None:
-            with open(filename, 'w+') as csvfile:
+            full_filename = filename + ".csv"
+            with open(full_filename, 'w+') as csvfile:
                 writer = csv.writer(csvfile)
-                writer.writerow(
-                    ['Input light wavelength (row 1) and power (row 2):'])
+                writer.writerow(['Input light wavelength (row 1) and power (row 2):'])
                 writer.writerow(in_wl)
                 writer.writerow(in_power)
-                writer.writerow(
-                    ['PD wavelength (row 3) and responsivity (row 4):'])
+                writer.writerow(['PD wavelength (row 3) and responsivity (row 4):'])
                 writer.writerow(out_wl)
                 writer.writerow(R_pd)
 
         return [out_wl, R_pd, in_wl, in_power]
+
+    def get_osa_parameters(self, trace='A'):
+        """
+        Read center wavelength, span, reference level, and RBW
+        :return: [trace_len, osa_params] = [center_wavelength, span, reference_level, RBW]
+        """
+        center_wavelength = self.gpib.query_ascii_values('CENTERWL?') #[m]
+        span = self.gpib.query_ascii_values('SP?') #[m]
+        reference_level = self.gpib.query_ascii_values('RL?') #[dBm]
+        RBW = self.gpib.query_ascii_values('RB?') #[m]
+
+        osa_params = [center_wavelength, span, reference_level, RBW]
+
+        # Get trace conditions
+        self.gpib.write("TRCOND TR%s?;" % trace)
+        conds = self.gpib.read_raw().decode('ascii')
+        # separate by comma
+        conds = conds.split(',')
+        trace_len = float(conds[5])
+
+        return [trace_len, osa_params]
 
 
 if __name__ == '__main__':
 
     hp = HP70951B()
     hp.initialize()
-    hp.read_data(filename='thorlabs_810nmLED_spectrum--Ibias=1A.csv')
+    hp.read_data(filename='bf_PolStable-1250nm_OEland1040_BOA_700mA_5mW_RBW1nm')
     # print(hp.read_data())
     hp.close()
