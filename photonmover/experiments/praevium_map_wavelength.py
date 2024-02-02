@@ -184,7 +184,7 @@ if __name__ == '__main__':
     init_voltage = 0  # [V]
     end_voltage = 60 # [V]
     increment = 1  # Voltage increment
-    voltage_list = np.arange(init_voltage, end_voltage+1, increment) #end_voltage+1 or will stop at end_voltage-1
+    voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------
 
     # INSTRUMENTS
