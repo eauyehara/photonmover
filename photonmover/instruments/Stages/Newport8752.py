@@ -2,7 +2,7 @@ from photonmover.Interfaces.Instrument import Instrument
 import serial
 import time
 
-COM_ADDRESS = 'COM11'
+COM_ADDRESS = 'COM3'
 
 
 class Newport8752(Instrument):

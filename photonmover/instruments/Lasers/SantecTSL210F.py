@@ -3,10 +3,10 @@ import time
 from photonmover.Interfaces.Laser import TunableLaser
 from photonmover.Interfaces.Instrument import Instrument
 
-SANTEC_1_ADDR = "GPIB1::7::INSTR"
-SANTEC_2_ADDR = "GPIB1::8::INSTR"
-SANTEC_3_ADDR = "GPIB1::9::INSTR"
-SANTEC_4_ADDR = "GPIB1::10::INSTR"
+SANTEC_1_ADDR = "GPIB0::7::INSTR"
+SANTEC_2_ADDR = "GPIB0::8::INSTR"
+SANTEC_3_ADDR = "GPIB0::9::INSTR"
+SANTEC_4_ADDR = "GPIB0::10::INSTR"
 
 SWEEP_DWELL_TIME = 1  # Time to sleep at each wavelength when we do a
 # tx curve by setting each wavelength at a time (in s)
@@ -156,3 +156,15 @@ class SantecTSL210F(Instrument, TunableLaser):
             state = 0
 
         return [self.wav, self.power, state]
+
+if __name__ == '__main__':
+    myLaser = SantecTSL210F()
+    myLaser.initialize()
+
+    myLaser.set_wavelength(1290)
+    myLaser.set_power(10.0)
+    myLaser.turn_on()
+    # myLaser.turn_off()
+
+
+    myLaser.close()
