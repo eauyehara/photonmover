@@ -199,6 +199,5 @@ if __name__ == '__main__':
     hp = KeysightN9000B()
     hp.initialize()
     # hp.read_data(1, filename='Dev1_0V_CW976_4.48mW_RBW24kHz_atten0dB_10MHz-3GHz_RLNA08G25G60')
-    hp.read_data(1, filename='Dev1_noInput_RBW24kHz_atten0dB_10MHz-3GHz_RLNA08G25G60')
-
+    hp.read_data(1, filename='MSA_FDS100_25V_Aerodiode980_2nsCurr_35MHz_24.5mW_DCcoup_biasT_RBW10kHz_ref-10dBm_atten0dBm_50MHz')
     hp.close()

@@ -4,7 +4,7 @@ from photonmover.Interfaces.Instrument import Instrument
 import time
 import pyvisa as visa
 
-GPIB_ADDR = "GPIB1::19::INSTR"  # GPIB adress
+GPIB_ADDR = "GPIB0::19::INSTR"  # GPIB adress
 
 
 class HP89410A(Instrument):
@@ -29,7 +29,7 @@ class HP89410A(Instrument):
             self.gpib = rm.open_resource(GPIB_ADDR, timeout=5000)
         except BaseException:
             raise ValueError(
-                'Cannot connect to NeHP89410A vector signal analyzer')
+                'Cannot connect to HP89410A vector signal analyzer')
 
     def close(self):
         print('Disconnecting HP89410A vector signal analyzer')
@@ -347,6 +347,6 @@ if __name__ == '__main__':
     #xdata = vsa.gpib.query_ascii_values("TRACE:X:DATA? D%d; " % 1)
     # print(xdata[1])
     # print(vsa.gpib.query('TRAC:X:UNIT?;'))
-    #vsa.retrieve_data(1, 'a')
-    #vsa.retrieve_data(2, 'b')
+    vsa.retrieve_data(1, 'a')
+    # vsa.retrieve_data(2, 'b')
     vsa.close()

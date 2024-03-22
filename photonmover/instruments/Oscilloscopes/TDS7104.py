@@ -5,7 +5,7 @@ import csv
 from photonmover.Interfaces.Instrument import Instrument
 import binascii
 
-GPIB_ADDR = "GPIB0::15::INSTR"  # VISA adress
+GPIB_ADDR = "GPIB0::30::INSTR"  # VISA adress
 
 
 class TDS7104(Instrument):
@@ -210,7 +210,8 @@ class TDS7104(Instrument):
         :return: numpoints
         """
         numpoints = self.gpib.query("HOR:RECO?")
-        num_points = str(numpoints[10:]).strip()
+        # num_points = numpoints.strip() #for newer TDS7104
+        num_points = str(numpoints[10:]).strip() #Works for TDS7104 with broken touchscreen, not newer one
         return float(num_points)
 
     def read_waveform(self, channels, file_name=None):
@@ -259,6 +260,7 @@ class TDS7104(Instrument):
             preamble_str = str(preamble[6:-1].decode()).split(';')
             # print(preamble_str)
 
+            #Works for TDS7104 with broken touchscreen, not newer one
             t_inc = float(preamble_str[9][4:])
             t_orig = float(preamble_str[10][4:])
             num_points = float(preamble_str[6][5:])
@@ -288,6 +290,7 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([1, 2], 'bf_PolStable_100V_OEland1040_1.18mW_simultaneousPol_80ns_8pspt_1')
+    osc.read_waveform([2], 'test')
+
 
     osc.close()

@@ -328,6 +328,6 @@ if __name__ == '__main__':
 
     hp = HP70951B()
     hp.initialize()
-    hp.read_data(filename='bf_PolStable-1250nm_OEland1040_BOA_700mA_5mW_RBW1nm')
+    hp.read_data(filename='Aerodiode980_CW_200mA_atten400uW_RBW1nm')
     # print(hp.read_data())
     hp.close()

@@ -1,3 +1,4 @@
+
 from photonmover.Interfaces.Experiment import Experiment
 from photonmover.utils.plot_utils import plot_graph
 
@@ -84,7 +85,7 @@ class PD_saturation(Experiment):
         IL = params["IL"]
         pump_wavelength = params["pump_wavelength"]
         RL = params["load_resistor"]
-        Rf = params["filter_resitor"]
+        Rf = params["filter_resistor"]
         Cf = params["filter_capacitor"]
 
         VOA_volt_list = []
@@ -122,7 +123,7 @@ class PD_saturation(Experiment):
         if filename is not None:
             # Save the data in a csv file
             time_tuple = time.localtime()
-            complete_filename = "%s-%d-%d-%d_%d-%d-%d.csv" % (filename,
+            complete_filename = "%s_%d-%d-%d_%d-%d-%d.csv" % (filename,
                                                             time_tuple[0],
                                                             time_tuple[1],
                                                             time_tuple[2],
@@ -220,18 +221,18 @@ if __name__ == '__main__':
     i_limit = 0.003  # current limit [A]
 
     # OTHER PARAMETERS
-    photodiode = 'FDS100'
+    photodiode = 'FDS100_packaged'
     pump_wavelength = 980 #[nm]
-    IL = 0.76
-    reverse_voltage = -5 #[V]
-    RL = 100 #[ohms] Load resistor
+    IL = 0.721
+    reverse_voltage = 40 #[V]
+    RL = 50 #[ohms] Load resistor
     Rf = 1000 #[ohms] Filter resistor
     Cf = 1e-6 #[F] Filter capacitance
 
     # EXPERIMENT PARAMETERS
     init_voltage = 4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.653  # [V] Maximum transmission on VOA
-    num_points = 250  # Number of points between init and end current
+    end_voltage = 1.0  # [V] Maximum transmission on VOA
+    num_points = 100  # Number of points between init and end current
     voltage_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------
 
@@ -248,7 +249,7 @@ if __name__ == '__main__':
     mm.initialize()
 
 
-    file_name = "PD_sat_%s_%dV_%dnm_%dohms" % (
+    file_name = "PDsat_%s_%dV_%dnm_%dohms" % (
         photodiode, reverse_voltage, pump_wavelength, RL)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
