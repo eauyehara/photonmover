@@ -5,7 +5,7 @@ import csv
 from photonmover.Interfaces.Instrument import Instrument
 import binascii
 
-GPIB_ADDR = "GPIB0::30::INSTR"  # VISA adress
+GPIB_ADDR = "GPIB0::15::INSTR"  # VISA adress
 
 
 class TDS7104(Instrument):
@@ -261,12 +261,20 @@ class TDS7104(Instrument):
             # print(preamble_str)
 
             #Works for TDS7104 with broken touchscreen, not newer one
-            t_inc = float(preamble_str[9][4:])
-            t_orig = float(preamble_str[10][4:])
             num_points = float(preamble_str[6][5:])
+            t_inc = float(preamble_str[9][4:])
+            t_zero = float(preamble_str[10][4:])
+            pt_offset = float(preamble_str[11][5:])
+            v_mult = float(preamble_str[13][4:])
+            v_offset = float(preamble_str[14][4:])
+            v_zero = float(preamble_str[15][4:])
 
-            t = np.arange(num_points)*t_inc + t_orig
+            #Create time array
+            t = t_zero + (np.arange(num_points) - pt_offset)*t_inc
             print("Read %d points" % read_points)
+
+            # Correct for offset and multiplying factor in data
+            wav_data = list(v_zero + v_mult*(np.array(wav_data) - v_offset))
 
             # Save the data if necessary. Each channel will be stored in a different file
             if file_name is not None:
@@ -290,7 +298,7 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([2], 'test')
+    osc.read_waveform([2], 'Flip-Flop_OEland_1.3Voffset')
 
 
     osc.close()
