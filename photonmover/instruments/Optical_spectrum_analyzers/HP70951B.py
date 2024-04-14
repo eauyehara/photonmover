@@ -302,6 +302,31 @@ class HP70951B(MSA, Instrument):
 
         return [out_wl, R_pd, in_wl, in_power]
 
+    def track_peak_motion(self, num_acq, filename=None):
+        """
+        Sample highest peak location vs time - (sampling interval not optimized - for sweep of 50ms, sample interval ~0.362s]
+        :param num_acq - number of acquisitions
+        :return: peak_wl, time_array
+        """
+        start_time = time.time()
+        time_array = []
+        wl_array = []
+        for acq in range(num_acq):
+            [wl, _] = self.get_peak_info()  # defaults to highest peak
+            time_array.append(time.time() - start_time)
+            wl_array.append(wl)
+        # print(np.diff(np.array(time_array)))
+        # print(wl_array)
+
+        if filename is not None:
+            full_filename = filename + ".csv"
+            with open(full_filename, 'w+') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(time_array)
+                writer.writerow(wl_array)
+
+        return [time_array, wl_array]
+
     def get_osa_parameters(self, trace='A'):
         """
         Read center wavelength, span, reference level, and RBW
