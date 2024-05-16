@@ -5,6 +5,7 @@ import socket
 import json
 from time import sleep
 import numpy as np
+import sys
 
 
 class M2_Solstis(Instrument, TunableLaser):
@@ -23,7 +24,7 @@ class M2_Solstis(Instrument, TunableLaser):
 
     def __init__(
             self,
-            host_adress='localhost',
+            host_address='localhost',
             port=9001,
             client_ip='192.168.1.100',
             timeout=1.0,
@@ -34,7 +35,7 @@ class M2_Solstis(Instrument, TunableLaser):
         self.wavelength_tolerance = wav_tolerance  # in nm
         self.poll_timeout = poll_timeout  # in s
 
-        self.host_address = host_adress
+        self.host_address = host_address
         self.port = port
         self.client_ip = client_ip
         self.latest_reply = None
@@ -174,8 +175,8 @@ class M2_Solstis(Instrument, TunableLaser):
             }
             self.s.sendall(bytes(json.dumps(json_getwave), 'utf-8'))
 
-            sleep(2.0)
-
+            # sleep(2.0)
+            sleep(1.0)
             json_reply = json.loads(self.s.recv(1024))
 
             # status id: 0 - idle, 1 - no wavemeter, 2 - tuning, 3 -
@@ -435,13 +436,66 @@ class M2_Solstis(Instrument, TunableLaser):
             self.stop()
             # laser.lock('on')
 
+
         return success, measured_wavelength
+
+    def set_wavelength_instrumental(self, wavelength):
+        """ Sends set wavelength command and checks reply (This version is faster than set_wavelength())
+
+                Parameters
+                ----------
+                wavelength : float [nm]
+                    target wavelength
+
+                Returns
+                -------
+                error : int or str
+                    Zero is returned if wavelength was set correctly.
+                    1 if not within tolerance after poll timeout.
+                    Otherwise, error string returned by the laser is returned.
+                """
+        if self.s is None:
+            print('M2_Solstis: socket not connected')
+            return 0.0
+        else:
+            transID = 91
+            json_setwave = {
+                'message': {
+                    'transmission_id': [transID],
+                    'op': 'set_wave_m',
+                    'parameters': {
+                        'wavelength': [wavelength]
+                    }
+                }
+            }
+
+            self.s.sendall(bytes(json.dumps(json_setwave), 'utf-8'))
+            sleep(1.0)
+            json_reply = json.loads(self.s.recv(1024))
+            self.latest_reply = json_reply
+            if json_reply['message']['transmission_id'] == [transID] and json_reply['message']['parameters'][
+                'status'] == [0]:
+                print('M2_Solstis: started tuning to {}'.format(wavelength))
+
+                for i in range(self.poll_timeout):
+                    current_wavelength = self.get_wavelength()
+                    if self.latest_reply['message']['parameters']['status'] in [[3]]:
+                        print('M2_Solstis: finished tuning to {}'.format(current_wavelength))
+                        return 0
+
+                print('M2_Solstis: current wavelength {}'.format(current_wavelength))
+                return 1
+            else:
+                print('M2_Solstis: failed poll wavelength')
+                print('M2_Solstis: reply from controller {}'.format(json_reply))
+
+                return json_reply
 
 
 if __name__ == '__main__':
     solstis = M2_Solstis()
     solstis.initialize()
-    solstis.set_wavelength(800.0)
+    solstis.set_wavelength(940.0)
     sleep(2)
     print(solstis.get_wavelength())
     solstis.close()

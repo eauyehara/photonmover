@@ -210,7 +210,8 @@ class TDS7104(Instrument):
         :return: numpoints
         """
         numpoints = self.gpib.query("HOR:RECO?")
-        num_points = str(numpoints[10:]).strip()
+        # num_points = numpoints.strip() #for newer TDS7104
+        num_points = str(numpoints[10:]).strip() #Works for TDS7104 with broken touchscreen, not newer one
         return float(num_points)
 
     def read_waveform(self, channels, file_name=None):
@@ -259,12 +260,21 @@ class TDS7104(Instrument):
             preamble_str = str(preamble[6:-1].decode()).split(';')
             # print(preamble_str)
 
-            t_inc = float(preamble_str[9][4:])
-            t_orig = float(preamble_str[10][4:])
+            #Works for TDS7104 with broken touchscreen, not newer one
             num_points = float(preamble_str[6][5:])
+            t_inc = float(preamble_str[9][4:])
+            t_zero = float(preamble_str[10][4:])
+            pt_offset = float(preamble_str[11][5:])
+            v_mult = float(preamble_str[13][4:])
+            v_offset = float(preamble_str[14][4:])
+            v_zero = float(preamble_str[15][4:])
 
-            t = np.arange(num_points)*t_inc + t_orig
+            #Create time array
+            t = t_zero + (np.arange(num_points) - pt_offset)*t_inc
             print("Read %d points" % read_points)
+
+            # Correct for offset and multiplying factor in data
+            wav_data = list(v_zero + v_mult*(np.array(wav_data) - v_offset))
 
             # Save the data if necessary. Each channel will be stored in a different file
             if file_name is not None:
@@ -288,6 +298,7 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([1, 2], 'bf_PolStable_100V_OEland1040_1.18mW_simultaneousPol_80ns_8pspt_1')
+    osc.read_waveform([2], 'Flip-Flop_OEland_1.3Voffset')
+
 
     osc.close()
