@@ -5,7 +5,7 @@ import socket
 import json
 from time import sleep
 import numpy as np
-import sys
+import sys as sys
 
 
 class M2_Solstis(Instrument, TunableLaser):
