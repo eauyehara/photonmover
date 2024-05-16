@@ -1,14 +1,15 @@
 import pyvisa as visa
 import time
+import numpy as np
 from photonmover.Interfaces.Laser import TunableLaser
 from photonmover.Interfaces.Instrument import Instrument
 
-SANTEC_1_ADDR = "GPIB1::7::INSTR"
-SANTEC_2_ADDR = "GPIB1::8::INSTR"
-SANTEC_3_ADDR = "GPIB1::9::INSTR"
-SANTEC_4_ADDR = "GPIB1::10::INSTR"
+SANTEC_1_ADDR = "GPIB0::7::INSTR"
+SANTEC_2_ADDR = "GPIB0::8::INSTR"
+SANTEC_3_ADDR = "GPIB0::9::INSTR"
+SANTEC_4_ADDR = "GPIB0::10::INSTR"
 
-SWEEP_DWELL_TIME = 1  # Time to sleep at each wavelength when we do a
+SWEEP_DWELL_TIME = 1.0  # Time to sleep at each wavelength when we do a
 # tx curve by setting each wavelength at a time (in s)
 
 
@@ -156,3 +157,30 @@ class SantecTSL210F(Instrument, TunableLaser):
             state = 0
 
         return [self.wav, self.power, state]
+
+    def continuous_sweep(self, power=1, start_wl=1260, stop_wl=1340, step_wl=1, dwell_time=SWEEP_DWELL_TIME, num_sweeps=2):
+        """
+        Sweeps wavelength num_sweeps times for alignment
+        """
+        # Set laser power, turn on laser
+        self.set_power(power=power)
+        self.turn_on()
+        time.sleep(0.3)
+
+        wl_arr = np.arange(start_wl, stop_wl+1, step_wl)
+        for i in range(num_sweeps):
+            for j, wl in enumerate(wl_arr):
+                self.set_wavelength(wl)
+                time.sleep(dwell_time)
+
+        self.turn_off()
+
+if __name__ == '__main__':
+    myLaser = SantecTSL210F()
+    myLaser.initialize()
+    myLaser.set_wavelength(1280.7)
+    myLaser.set_power(1)
+    myLaser.turn_on()
+    # myLaser.continuous_sweep(dwell_time=1, num_sweeps=5)
+    myLaser.close()
+

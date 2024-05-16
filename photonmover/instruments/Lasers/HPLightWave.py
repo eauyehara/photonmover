@@ -5,13 +5,14 @@ from photonmover.Interfaces.Instrument import Instrument
 from photonmover.Interfaces.PowMeter import PowerMeter
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 # The HP Lightwave is particular because it is both a laser and a
 # power meter.
 
-HP_ADDR = "GPIB1::20::INSTR"
+HP_ADDR = "GPIB0::20::INSTR"
 DEFAULT_INTEGRATION_TIME = 0.05
-SWEEP_DWELL_TIME = 0.4  # Time to sleep at each wavelength when we do a
+SWEEP_DWELL_TIME = 1  # Time to sleep at each wavelength when we do a
 # tx curve by setting each wavelength at a time (in s)
 
 
@@ -474,11 +475,36 @@ class HPLightWave(Instrument, TunableLaser, PowerMeter):
 
         return [wav, power, state]
 
+    def continuous_sweep(self, start_wl=1500, stop_wl=1550, step_wl=0.1, dwell_time=SWEEP_DWELL_TIME, num_sweeps=2):
+        """
+        Sweeps wavelength num_sweeps times for alignment
+        """
+        # turn on laser
+        self.turn_on()
+        time.sleep(0.3)
+
+        wl_arr = np.arange(start_wl, stop_wl+1, step_wl)
+        for i in range(num_sweeps):
+            for j, wl in enumerate(wl_arr):
+                self.set_wavelength(wl)
+                time.sleep(dwell_time)
+
+        self.turn_off()
+
+
 
 if __name__ == '__main__':
     laser = HPLightWave(tap_channel=1, rec_channel=3)
     laser.initialize()
-    print(laser.get_state())
+    # print(laser.get_state())
+    # laser.set_wavelength(wavelength=1484)
+    laser.continuous_sweep(start_wl=1485, stop_wl=1584, step_wl=0.1)
+    # laser.turn_on()
+    # time.sleep(0.3)
+    # print(laser.get_state())
+    # [power_tap, power] = laser.get_powers()
+    # print(power_tap)
+    # print(power)
     # laser.configure_sweep(1530, 1560, 300)
     laser.close()
     # laser.turn_on()

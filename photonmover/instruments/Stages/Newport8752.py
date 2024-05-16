@@ -2,7 +2,7 @@ from photonmover.Interfaces.Instrument import Instrument
 import serial
 import time
 
-COM_ADDRESS = 'COM11'
+COM_ADDRESS = 'COM3'
 
 
 class Newport8752(Instrument):
@@ -199,8 +199,8 @@ if __name__ == '__main__':
     stage.initialize()
     # print(stage.set_axis('x'))
     # input()
-    # print(stage.move_to_limit('x'))
+    # print(stage.move_to_limit('y'))
     # input()
-    print(stage.move_steps(-10000, 'y', vel=500, acc=None, motor=0, go=True))
+    print(stage.move_steps(10000, 'y', vel=500, acc=None, motor=0, go=True))
     print('Current pos: %s', stage.sendrecv('pos'))
     stage.close()

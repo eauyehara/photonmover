@@ -9,9 +9,7 @@ from PIL import Image
 DLL_PATH = "C:\\Program Files\\Common Files\\XenICs\\Runtime\\xeneth64.dll"
 #CAL_PATH = "C:\\Program Files\\Xeneth\\Calibrations\\Xeva1785_20000uS_High_gain_RT_1785.xca"
 CAL_PATH = "C:\\Program Files\\Xeneth\\Calibrations\\xenics_cal_1785.xca"
-SETTINGS_PATH = "C:\\Users\\POE\\Desktop\\Marc\\photonmover-exp\\photonmover-master\\instruments\\Cameras\\xenics_settings_0degC_max_int_time.xcf"
-
-
+SETTINGS_PATH = "C:\\Users\\elise\\Github\\photonmover\\photonmover\\instruments\\Cameras\\xenics_settings_0degC_max_int_time_cs.xcf"
 class Xenics(Instrument, Camera):
 
     def __init__(
