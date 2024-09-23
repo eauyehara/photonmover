@@ -298,7 +298,5 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([2], 'Flip-Flop_OEland_1.3Voffset')
-
-
+    osc.read_waveform([1], 'sync_818-BB-35F_BOA-10ns70MHz_trigOEland1040_3')
     osc.close()

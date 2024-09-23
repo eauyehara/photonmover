@@ -110,7 +110,8 @@ class PD_saturation(Experiment):
 
             # Read optical power through tap
             [tap_power, _] = self.pm.get_powers()
-            power_list.append(tap_power*100*IL)
+            # power_list.append(tap_power*100*IL)
+            power_list.append(tap_power*2)
 
             # Read PD voltage from multimeter
             PD_volt = self.mm.measure_voltage('DC')
@@ -221,17 +222,17 @@ if __name__ == '__main__':
     i_limit = 0.003  # current limit [A]
 
     # OTHER PARAMETERS
-    photodiode = 'FDS100_packaged'
-    pump_wavelength = 980 #[nm]
+    photodiode = 'PD2'
+    pump_wavelength = 1272#[nm]
     IL = 0.721
-    reverse_voltage = 40 #[V]
+    reverse_voltage = 10 #[V]
     RL = 50 #[ohms] Load resistor
-    Rf = 1000 #[ohms] Filter resistor
-    Cf = 1e-6 #[F] Filter capacitance
+    Rf = 0 #[ohms] Filter resistor
+    Cf = 0.1e-6 #[F] Filter capacitance
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.0  # [V] Maximum transmission on VOA
+    init_voltage = 3.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 1.5  # [V] Maximum transmission on VOA
     num_points = 100  # Number of points between init and end current
     voltage_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------

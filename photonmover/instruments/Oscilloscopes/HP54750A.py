@@ -379,7 +379,7 @@ if __name__ == '__main__':
 
     # osc.read_histogram([1], 'hist_bf_PolStable_BOA_50V_5mW_50psdiv')
 
-    osc.read_waveform([1], 'BOA_240mA_1250nm_bf_PolStable_OEland1040_5mW_50psdiv_avg64')
+    osc.read_waveform([1], 'gratingCompressor_v2_55deg_OEland1050_tuneG2')
 
     osc.close()
 

@@ -25,7 +25,7 @@ class KeysightN9000B(MSA, Instrument):
 
         rm = visa.ResourceManager()
         try:
-            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=20000)
+            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=130000)
         except BaseException:
             raise ValueError('Cannot connect to the Keysight MSA')
 
@@ -195,9 +195,9 @@ class KeysightN9000B(MSA, Instrument):
 
 
 if __name__ == '__main__':
-
     hp = KeysightN9000B()
     hp.initialize()
     # hp.read_data(1, filename='Dev1_0V_CW976_4.48mW_RBW24kHz_atten0dB_10MHz-3GHz_RLNA08G25G60')
-    hp.read_data(1, filename='MSA_FDS100_25V_Aerodiode980_2nsCurr_35MHz_24.5mW_DCcoup_biasT_RBW10kHz_ref-10dBm_atten0dBm_50MHz')
+    # hp.read_data(1, filename='MSA_BOA-700mA9ns_4.1mA_35MHzLP_36MHzBP_LNA_RBW-VBW_1Hz_25-45MHz')
+    hp.read_data(1, filename='MSA_diamondSig4-Oeland_BOA700mACW_Dev1-60V-1254.7nm_manualLock_RBW1Hz_30-40MHz')
     hp.close()

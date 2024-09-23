@@ -172,24 +172,25 @@ class praevium_map_wavelength(Experiment):
 if __name__ == '__main__':
     # ------------------------------------------------------------
     # SAFETY LIMITS
-    i_limit = 0.003  # current limit
+    i_limit = 100e-9  # current limit
 
     # OTHER PARAMETERS
-    device = 'Dev1'
-    pump_laser = 'OEland1040'
-    pump_power = 3.0 #mW
-    IL = 0.70
+    device = 'Dev3a'
+    pump_laser = 'OEland1038' #'CW976'
+    pump_power = 2.0 #mW
+    IL = 0.75
+    RBW = 0.5 #nm
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 60 # [V]
+    end_voltage = 80 # [V]
     increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------
 
     # INSTRUMENTS
     # ps = KeysightE36106B(current_limit=i_limit)
-    ps = Keithley2635A(current_compliance=0.00001, voltage_compliance=61) #A, V
+    ps = Keithley2635A(current_compliance=100e-9, voltage_compliance=81) #A, V
     osa = HP70951B()
 
     # Initialize instruments
@@ -197,8 +198,8 @@ if __name__ == '__main__':
     osa.initialize()
 
     # file_name = 'LL_dev1_50V_pm1258_Solstis980nm'  # Filename where to save csv data
-    file_name = "waveMap_%s_%d-%dV_%s_%3.2f" % (
-        device, init_voltage, end_voltage, pump_laser, pump_power*IL)  # Filename where to save csv data
+    file_name = "waveMap_%s_%d-%dV_%s_%3.2fmW_RBW%3.2fnm" % (
+        device, init_voltage, end_voltage, pump_laser, pump_power*IL, RBW)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
     instr_list = [osa, ps]

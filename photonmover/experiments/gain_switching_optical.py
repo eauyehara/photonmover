@@ -122,7 +122,7 @@ class gain_switching_optical(Experiment):
 
             #Read pump power through 1% tap, scale to power in 99% tap
             [pump_power_tap, _] = self.pm.get_powers()
-            pump_power = pump_power_tap*100*IL  #scale to full power
+            pump_power = pump_power_tap*99*IL  #scale to full power
             pump_power_list.append(pump_power)  # [W]
             print('Pump power at %0.6f mW' % (pump_power*1e3))
 
@@ -246,10 +246,10 @@ if __name__ == '__main__':
     i_limit = 0.003 #current limit
 
     # POWER METER SETTINGS
-    pump_wavelength = 1040  #nm
+    pump_wavelength = 1038  #nm
 
     # SPECIFY DETECTOR ("osa" or "osc")
-    detector = "osc"
+    detector = "osa"
 
     # OSCILLOSCOPE PARAMETERS
     num_avg = 64
@@ -258,16 +258,16 @@ if __name__ == '__main__':
     RBW = 0.1 #nm
 
     #DEVICE PARAMETERS
-    device = 'Dev1_980WDM'
-    tuning_voltage = 0  # [V]
+    device = 'Dev2a'
+    tuning_voltage = 51#12  # [V]
 
     # COLLECTION BENCH PARAMETERS
     fiber_coupling_efficiency = 0.715
-    IL = 0.62 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
+    IL = 0.75 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 2.844 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.58  # [V] Maximum transmission on VOA
+    init_voltage = 2.5 #2.5 #2.8 #2.46 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 1.6 #1.8 #2.2 #1.6  # [V] Maximum transmission on VOA
     num_points = 15  # Number of points between init and end current
     VOA_voltage = np.linspace(init_voltage, end_voltage, num_points)
 

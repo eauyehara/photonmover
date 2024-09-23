@@ -178,7 +178,7 @@ class SantecTSL210F(Instrument, TunableLaser):
 if __name__ == '__main__':
     myLaser = SantecTSL210F()
     myLaser.initialize()
-    myLaser.set_wavelength(1290)
+    myLaser.set_wavelength(1269)
     myLaser.set_power(10)
     myLaser.turn_on()
     # myLaser.continuous_sweep(dwell_time=1, num_sweeps=5)

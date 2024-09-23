@@ -140,7 +140,7 @@ class LL_curve(Experiment):
 
             #Read pump power through 1% tap, scale to power in 99% tap
             [pump_power_tap, _] = self.pm_pump.get_powers()
-            pump_power = pump_power_tap*100*IL  #scale to full power
+            pump_power = pump_power_tap*99*IL  #scale to full power
             pump_power_list.append(pump_power)  # [W]
             print('Pump power at %0.6f mW' % (pump_power*1e3))
 
@@ -238,18 +238,18 @@ if __name__ == '__main__':
     # POWER METER SETTINGS
     # Check that power meter sensors (declared as global variables up top) are accurate
     # Note: pump sensor and VCSEL sensor can be the same type
-    pump_wavelength = 980 #nm
-    VCSEL_wavelength = 1269  #nm
+    pump_wavelength = 1040 #nm
+    VCSEL_wavelength = 1343  #nm
 
-    IL = 0.760 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
+    IL = 0.750 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*99% - scales 1% tap output to actual input to VCSEL fiber
 
     #OTHER DEVICE PARAMETERS
-    device = 'Dev1'
-    tuning_voltage = 0 # [V]
+    device = 'Dev2a'
+    tuning_voltage = 51 # [V]
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.653  # [V] Maximum transmission on VOA
+    init_voltage = 3.5 #4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 1.6 #2.24 #1.653  # [V] Maximum transmission on VOA
     num_points = 250  # Number of points between init and end current
     volt_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------
