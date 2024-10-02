@@ -175,11 +175,12 @@ if __name__ == '__main__':
     i_limit = 100e-9  # current limit
 
     # OTHER PARAMETERS
-    device = 'Dev3a'
+    device = 'Dev1a'
     pump_laser = 'OEland1038' #'CW976'
-    pump_power = 2.0 #mW
-    IL = 0.75
+    pump_power = 3.4 #mW
+    IL = 0.68
     RBW = 0.5 #nm
+    temp = 25 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
@@ -198,8 +199,8 @@ if __name__ == '__main__':
     osa.initialize()
 
     # file_name = 'LL_dev1_50V_pm1258_Solstis980nm'  # Filename where to save csv data
-    file_name = "waveMap_%s_%d-%dV_%s_%3.2fmW_RBW%3.2fnm" % (
-        device, init_voltage, end_voltage, pump_laser, pump_power*IL, RBW)  # Filename where to save csv data
+    file_name = "waveMap_%s_%d-%dV_%dC_%s_%3.2fmW_RBW%3.2fnm" % (
+        device, init_voltage, end_voltage, temp, pump_laser, pump_power*IL, RBW)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
     instr_list = [osa, ps]

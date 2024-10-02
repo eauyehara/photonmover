@@ -12,12 +12,24 @@ from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
 import time
 import numpy as np
 import csv
+from scipy import io
 
 from ctypes import create_string_buffer, c_int16, c_double, byref, c_char_p, c_bool
 
 # Power meter sensors
 XPOL_SENSOR = b'S122C'  # 800-1700nm
 PPOL_SENSOR = b'S122C'  # 800-1700nm
+
+
+def load_wavvolt(filename):
+    """
+    Read wavelength over voltage data from mat file
+    """
+    full_filename = filename + ".mat"
+    a = io.loadmat(full_filename)
+    wav_list = a['wav_select'][0]
+    volt_list = a['volt_select'][0]
+    return [volt_list, wav_list]
 
 
 class PER_wavelength_sweep(Experiment):
@@ -89,6 +101,7 @@ class PER_wavelength_sweep(Experiment):
         Returns a string with the experiment name
         """
         return "PER_wavelength_sweep"
+
         
     def perform_experiment(self, params, filename=None):
         """
@@ -205,10 +218,12 @@ class PER_wavelength_sweep(Experiment):
 
 
 import sys
-from pyqtgraph.Qt import QtGui, QtCore
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
-class Window(QtGui.QMainWindow):
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.setGeometry(100, 100, 1000, 500)
@@ -218,11 +233,13 @@ class Window(QtGui.QMainWindow):
         mainMenu = self.menuBar()
 
         # Set Window as central widget
-        self.w = QtGui.QWidget()
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
         self.setCentralWidget(self.w)
 
         ## Create a grid layout to manage the widgets size and position
-        self.layout = QtGui.QGridLayout()
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
         self.w.setLayout(self.layout)
 
         # plot widget
@@ -249,14 +266,13 @@ if __name__ == '__main__':
     # Check that power meter sensors (declared as global variables up top) are accurate
     # Note: pump sensor and VCSEL sensor can be the same type
     pump_wavelength = 1038 #nm
-    VCSEL_wavelength = [1255, 1245, 1349, 1345, 1341, 1336, 1331, 1321, 1311, 1299] #nm
 
     #OTHER DEVICE PARAMETERS
-    device ='Dev3a-isolator-56Vopt-2'
+    device ='Dev1a_5C_3'
 
     # EXPERIMENT PARAMETERS
-    pump_power = 2.0 # [mW]
-    IL = 0.75
+    pump_power = 3.4 # [mW]
+    IL = 0.68
     # start_voltage = 0 # [V] Start tuning voltage in sweep
     # end_voltage = 70  # [V] End tuning voltage in sweep
     # increment = 1 # [V]
@@ -265,7 +281,8 @@ if __name__ == '__main__':
     # elif end_voltage < 0:
     #     volt_list = np.arange(start_voltage, end_voltage-1, -increment)
     # print(volt_list)
-    volt_list = np.array([16, 41, 51, 55, 59, 62, 65, 71, 76, 80])
+    wavvolt_file = "wavvolt_Dev1a_5C_OEland1038_2.31mW"
+    [volt_list, VCSEL_wavelength] = load_wavvolt(wavvolt_file)
     # ------------------------------------------------------------
 
     # INSTRUMENTS
@@ -287,7 +304,7 @@ if __name__ == '__main__':
 
     # SET UP THE EXPERIMENT
     instr_list = [pm1, pm2, ps]
-    params = {"xpol_sensor": XPOL_SENSOR, "ppol_sensor": PPOL_SENSOR, "VCSEL_wavelength": VCSEL_wavelength, "voltage": volt_list}
+    params = {"xpol_sensor": XPOL_SENSOR, "ppol_sensor": PPOL_SENSOR, "VCSEL_wavelength": VCSEL_wavelength*1e9, "voltage": volt_list}
     exp = PER_wavelength_sweep(instr_list)
 
     # RUN IT
@@ -295,7 +312,8 @@ if __name__ == '__main__':
 
 
     # PLOT DATA
-    app = QtGui.QApplication(sys.argv)
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     GUI = Window()
     GUI.plot(volt_list, PER_list)
     sys.exit(app.exec_())
