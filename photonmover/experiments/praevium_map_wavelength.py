@@ -70,7 +70,7 @@ class praevium_map_wavelength(Experiment):
         to the specified file (if given) - assumes osa set to desired display parameters prior to running experiment
         :param params: dictionary of the parameters necessary for the experiment.
         :param filename: if specified, the data is saved in the specified file.
-        :return: [voltage_list, wavelength_list, 2D spectrum_array]
+        :return: [meas_volt_list, pk_wl_list]
         """
 
         params = self.check_all_params(params)
@@ -78,6 +78,7 @@ class praevium_map_wavelength(Experiment):
         voltage_list = params["voltage_list"]
 
         meas_volt_list = []
+        pk_wl_list = []
         [trace_len, osa_settings_list] = self.osa.get_osa_parameters()
 
         spectrum_array = np.array(np.zeros((len(voltage_list), int(trace_len))))
@@ -100,6 +101,8 @@ class praevium_map_wavelength(Experiment):
             #Read osa spectrum and store in wavelength_array
             [_, amp] = self.osa.read_data()
             spectrum_array[ind, :] = np.reshape(np.array(amp), (1, int(trace_len)))
+            pk_ind = np.argmax(spectrum_array[ind,:])
+            pk_wl_list.append(wavelength_list[pk_ind])
 
         print(np.shape(spectrum_array))
         print('Finished voltage sweep')
@@ -143,16 +146,50 @@ class praevium_map_wavelength(Experiment):
                                              'voltage_list': voltage_list
                                              })
 
-        self.data = [wavelength_list, spectrum_array[-1]]
+                wavvolt_filename = "%s_%dC_%s_%3.2fmW" % (
+                    params["device"],
+                    params["temp"],
+                    params["pump_laser"],
+                    params["pump_power"]
+                )
 
-        return [voltage_list, wavelength_list, spectrum_array]
+                self.save_wavvolt(wavvolt_filename, np.array(meas_volt_list), np.array(pk_wl_list))
+
+        self.data = [meas_volt_list, pk_wl_list]
+
+        return [meas_volt_list, pk_wl_list]
 
     def required_params(self):
         """
         Returns a list with the keys that need to be specified in the params dictionary, in order for
         a measurement to be performed
         """
-        return ["voltage_list"]
+
+        return ["voltage_list", "device", "pump_laser","pump_power","temp"]
+
+    def save_wavvolt(self, filename, volt, peak_wl, f_interp=5000):
+        """
+        Interpolates voltage vs peak wavelength curve, saves wavvolt file with variables:
+        -volt_select: original measured voltage from experiment
+        -wav_select: original measured wavelengths from experiment
+        -volt_interp: interpolated voltage
+        -wav_interp: interpolated wavelength
+        """
+        volt_interp = np.linspace(volt[0], volt[-1], f_interp)
+        peak_interp = np.interp(volt_interp, volt, peak_wl)
+
+        time_tuple = time.localtime()
+        wavvolt_filename = "wavvolt_%s_%d-%d-%d.mat" % (
+            filename,
+            time_tuple[0],
+            time_tuple[1],
+            time_tuple[2])
+        io.savemat(wavvolt_filename, {'volt_select': volt,
+                                     'wav_select': peak_wl,
+                                      'volt_interp': volt_interp,
+                                      'peak_interp': peak_interp
+                                     })
+
 
     def plot_data(self, canvas_handle, data=None):
 
@@ -162,12 +199,50 @@ class praevium_map_wavelength(Experiment):
             else:
                 raise ValueError('plot_data was called before performing the experiment or providing data')
 
-        wavelength = data[0]
-        last_spectrum = data[1]
+        voltage = data[0]
+        peak_wl = data[1]
 
-        plot_graph(x_data=wavelength, y_data=last_spectrum, canvas_handle=canvas_handle, xlabel='Wavelength (nm)',
-                   ylabel='Power (dBm)', title='Last Spectrum', legend=None)
+        plot_graph(x_data=voltage, y_data=peak_wl, canvas_handle=canvas_handle, xlabel='Voltage (V)',
+                   ylabel='Peak Wavelength (nm)', title='Tuning Curve', legend=None)
 
+import sys
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
+import pyqtgraph as pg
+
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setGeometry(100, 100, 1000, 500)
+        self.setWindowTitle("PER Sweep")
+
+        # Menu definition
+        mainMenu = self.menuBar()
+
+        # Set Window as central widget
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
+        self.setCentralWidget(self.w)
+
+        ## Create a grid layout to manage the widgets size and position
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
+        self.w.setLayout(self.layout)
+
+        # plot widget
+        self.p_power = pg.PlotWidget()
+        self.xlabel = self.p_power.setLabel('bottom', text='Voltage', units='V')
+        self.ylabel = self.p_power.setLabel('left', text='Wavelength', units='nm')
+        self.layout.addWidget(self.p_power, 0, 0)
+
+        self.p_power_handle = self.p_power.plot(pen=(1, 3))
+
+        self.show()
+
+
+    def plot(self, x, y):
+        self.p_power_handle.setData(x,y)
 
 if __name__ == '__main__':
     # ------------------------------------------------------------
@@ -176,10 +251,10 @@ if __name__ == '__main__':
 
     # OTHER PARAMETERS
     device = 'Dev1a'
-    pump_laser = 'OEland1038' #'CW976'
-    pump_power = 3.4 #mW
-    IL = 0.68
-    RBW = 0.5 #nm
+    pump_laser = 'CW976' #'OEland1038' #'CW976'
+    pump_power = 5.0 #mW
+    IL = 1
+    RBW = 0.1 #nm
     temp = 25 #C
 
     # EXPERIMENT PARAMETERS
@@ -204,12 +279,20 @@ if __name__ == '__main__':
 
     # SET UP THE EXPERIMENT
     instr_list = [osa, ps]
-    params = {"voltage_list": voltage_list}
+    params = {"voltage_list": voltage_list, "device": device, "pump_laser": pump_laser, "pump_power": pump_power, "temp": temp}
     exp = praevium_map_wavelength(instr_list)
 
     # RUN IT
-    [voltage_list, wavelength_list, spectrum_array] = exp.perform_experiment(params, filename=file_name)
+    [meas_volt_list, pk_wl_list] = exp.perform_experiment(params, filename=file_name)
+
+    # PLOT DATA
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
+    GUI = Window()
+    GUI.plot(meas_volt_list, pk_wl_list)
 
     # CLOSE INSTRUMENTS
     osa.close()
     ps.close()
+
+    sys.exit(app.exec_())

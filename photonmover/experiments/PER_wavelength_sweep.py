@@ -268,11 +268,11 @@ if __name__ == '__main__':
     pump_wavelength = 1038 #nm
 
     #OTHER DEVICE PARAMETERS
-    device ='Dev1a_5C_3'
+    device ='Dev1a_25C_CW5mW_pulse_2'
 
     # EXPERIMENT PARAMETERS
-    pump_power = 3.4 # [mW]
-    IL = 0.68
+    pump_power = 3.7 # [mW]
+    IL = 0.27
     # start_voltage = 0 # [V] Start tuning voltage in sweep
     # end_voltage = 70  # [V] End tuning voltage in sweep
     # increment = 1 # [V]
@@ -281,7 +281,8 @@ if __name__ == '__main__':
     # elif end_voltage < 0:
     #     volt_list = np.arange(start_voltage, end_voltage-1, -increment)
     # print(volt_list)
-    wavvolt_file = "wavvolt_Dev1a_5C_OEland1038_2.31mW"
+    # wavvolt_file = "wavvolt_Dev1a_25C_OEland1038_2.31mW"
+    wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.0mW"
     [volt_list, VCSEL_wavelength] = load_wavvolt(wavvolt_file)
     # ------------------------------------------------------------
 
@@ -316,9 +317,10 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     GUI = Window()
     GUI.plot(volt_list, PER_list)
-    sys.exit(app.exec_())
 
     # CLOSE INSTRUMENTS
     pm1.close()
     pm2.close()
     ps.close()
+
+    sys.exit(app.exec_())
