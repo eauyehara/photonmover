@@ -377,9 +377,9 @@ if __name__ == '__main__':
     osc = HP54750A()
     osc.initialize()
 
-    # osc.read_histogram([1], 'hist_bf_PolStable_BOA_50V_5mW_50psdiv')
+    osc.read_histogram([1], 'hist_pcfOPA_95cm_30uW_894.8_OEland1053.8-580mW_Dev1a1282-20mW_avg64')
 
-    osc.read_waveform([1], 'gratingCompressor_v2_55deg_OEland1050_tuneG2')
+    # osc.read_waveform([1], 'pcfOPA_95cm_30uW_894.8_OEland1053.8-580mW_Dev1a1282-20mW_avg64')
 
     osc.close()
 

@@ -117,8 +117,8 @@ class gain_switching_optical(Experiment):
             meas_curr = self.ps.measure_current()
             print('VOA current is %0.4f A' % meas_curr)
 
-            # Wait time (increase if oscilloscope num_avg large)
-            time.sleep(7.0)  # [s]
+            # Wait time (increase if oscilloscope num_avg or number of points large)
+            time.sleep(10.0)  # [s]
 
             #Read pump power through 1% tap, scale to power in 99% tap
             [pump_power_tap, _] = self.pm.get_powers()
@@ -176,7 +176,7 @@ class gain_switching_optical(Experiment):
                                      'num_avg': num_avg})
         # units: pump_power_list: [W], VOA_voltage_list: [V], pump_wavelength: [nm], tuning_voltage: [V], fiber_coupling efficiency: [], 'num_avg': [#]
 
-        self.data = [np.array(pump_power_list), np.array(trace_peak_list)]
+        self.data = [pump_power_list, trace_peak_list]
         return [pump_power_list, trace_peak_list]
     
     def required_params(self):
@@ -202,27 +202,29 @@ class gain_switching_optical(Experiment):
             plot_graph(x_data=pump_power, y_data=trace_peak, canvas_handle=canvas_handle, xlabel='Pump Power (mW)', ylabel='Spectrum Peak (dBm)', title='Peak Amplitiude', legend=None)
 
 
-
-
 import sys
-from pyqtgraph.Qt import QtGui, QtCore
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
-class Window(QtGui.QMainWindow):
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.setGeometry(100, 100, 1000, 500)
-        self.setWindowTitle("Peak Trace Voltage")
+        self.setWindowTitle("PER Sweep")
 
         # Menu definition
         mainMenu = self.menuBar()
 
         # Set Window as central widget
-        self.w = QtGui.QWidget()
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
         self.setCentralWidget(self.w)
 
         ## Create a grid layout to manage the widgets size and position
-        self.layout = QtGui.QGridLayout()
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
         self.w.setLayout(self.layout)
 
         # plot widget
@@ -239,17 +241,52 @@ class Window(QtGui.QMainWindow):
     def plot(self, x, y):
         self.p_power_handle.setData(x,y)
 
+# import sys
+# from pyqtgraph.Qt import QtGui, QtCore
+# import pyqtgraph as pg
+#
+# class Window(QtGui.QMainWindow):
+#     def __init__(self):
+#         super(Window, self).__init__()
+#         self.setGeometry(100, 100, 1000, 500)
+#         self.setWindowTitle("Peak Trace Voltage")
+#
+#         # Menu definition
+#         mainMenu = self.menuBar()
+#
+#         # Set Window as central widget
+#         self.w = QtGui.QWidget()
+#         self.setCentralWidget(self.w)
+#
+#         ## Create a grid layout to manage the widgets size and position
+#         self.layout = QtGui.QGridLayout()
+#         self.w.setLayout(self.layout)
+#
+#         # plot widget
+#         self.p_power = pg.PlotWidget()
+#         self.xlabel = self.p_power.setLabel('bottom', text='Pump Power', units='W')
+#         self.ylabel = self.p_power.setLabel('left', text='Peak Amplitude', units='a.u.')
+#         self.layout.addWidget(self.p_power, 0, 0)
+#
+#         self.p_power_handle = self.p_power.plot(pen=(1, 3))
+#
+#         self.show()
+#
+#
+#     def plot(self, x, y):
+#         self.p_power_handle.setData(x,y)
+
 if __name__ == '__main__':
 
     # -------------------------------------------------------------
     # SAFETY LIMITS
-    i_limit = 0.003 #current limit
+    i_limit = 10e-9#current limit
 
     # POWER METER SETTINGS
     pump_wavelength = 1038  #nm
 
     # SPECIFY DETECTOR ("osa" or "osc")
-    detector = "osa"
+    detector = "osc"
 
     # OSCILLOSCOPE PARAMETERS
     num_avg = 64
@@ -258,16 +295,16 @@ if __name__ == '__main__':
     RBW = 0.1 #nm
 
     #DEVICE PARAMETERS
-    device = 'Dev2a'
-    tuning_voltage = 51#12  # [V]
+    device = 'Dev1a_5mW'
+    tuning_voltage = 80#12  # [V]
 
     # COLLECTION BENCH PARAMETERS
     fiber_coupling_efficiency = 0.715
-    IL = 0.75 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
+    IL = 0.27 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 2.5 #2.5 #2.8 #2.46 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.6 #1.8 #2.2 #1.6  # [V] Maximum transmission on VOA
+    init_voltage = 3.5 #2.5 #2.8 #2.46 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 2.7 #1.8 #2.2 #1.6  # [V] Maximum transmission on VOA
     num_points = 15  # Number of points between init and end current
     VOA_voltage = np.linspace(init_voltage, end_voltage, num_points)
 
@@ -306,7 +343,8 @@ if __name__ == '__main__':
 
 
     # PLOT DATA
-    app = QtGui.QApplication(sys.argv)
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     GUI = Window()
     GUI.plot(pump_power_list, trace_peak_list)
     sys.exit(app.exec_())

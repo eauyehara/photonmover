@@ -147,7 +147,7 @@ class pcf_opa_spectra(Experiment):
 
         self.data = [est_wl_list, pk_wl_arr]
 
-        return [wavelength_list, spectrum_array]
+        return [est_wl_list, pk_wl_arr]
 
     def required_params(self):
         """
@@ -170,6 +170,45 @@ class pcf_opa_spectra(Experiment):
         plot_graph(x_data=seed_wl, y_data=peak_wl, canvas_handle=canvas_handle, xlabel='Seed Wavelength (nm)',
                    ylabel='Peak Wavelength (nm)', title='Signal vs Idler', legend=None)
 
+import sys
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
+import pyqtgraph as pg
+
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setGeometry(100, 100, 1000, 500)
+        self.setWindowTitle("Seed Sweep")
+
+        # Menu definition
+        mainMenu = self.menuBar()
+
+        # Set Window as central widget
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
+        self.setCentralWidget(self.w)
+
+        ## Create a grid layout to manage the widgets size and position
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
+        self.w.setLayout(self.layout)
+
+        # plot widget
+        self.p_power = pg.PlotWidget()
+        self.xlabel = self.p_power.setLabel('bottom', text='Voltage', units='V')
+        self.ylabel = self.p_power.setLabel('left', text='Wavelength', units='nm')
+        self.layout.addWidget(self.p_power, 0, 0)
+
+        self.p_power_handle = self.p_power.plot(pen=(1, 3))
+
+        self.show()
+
+
+    def plot(self, x, y):
+        self.p_power_handle.setData(x,y)
+
 
 if __name__ == '__main__':
     # ------------------------------------------------------------
@@ -180,19 +219,19 @@ if __name__ == '__main__':
     seed_laser = 'Dev1a'
 
     # pump_laser = 'CW976' #'OEland1038'
-    pump_power = 500.0 # [mW] Coupled into PCF
-    pump_wl = 1050 #[nm]
-    seed_power = 5.0 # [mW] Coupled into PCF
+    pump_power = 0 # [mW] Coupled into PCF
+    pump_wl = 1053.8 #[nm]
+    seed_power = 20 # [mW] Coupled into PCF
 
-    seed_startwl = 1255 #[nm]
-    seed_stopwl = 1260 #[nm]
-    stepwl = 1 #[nm]
+    seed_startwl = 1240 #[nm]
+    seed_stopwl = 1360 #[nm]
+    stepwl = 2 #[nm]
 
     FC = 0.5  # fiber coupling efficiency at output
     RBW = 0.5  # nm (OSA)
 
     # EXPERIMENT PARAMETERS
-    wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.0mW"
+    wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.00mW_temp"
     # ------------------------------------------------------------
 
     # INSTRUMENTS
@@ -206,7 +245,7 @@ if __name__ == '__main__':
 
     seed_wls = sl.generate_valid_sweep(seed_startwl, seed_stopwl, stepwl)
 
-    file_name = "pcfOPA_%s_%d-%dnm_%dmW_OE%3.2fnm_%dmW" % (
+    file_name = "pcfOPA_idler_%s_%d-%dnm_%dmW_OE%3.2fnm_%dmW" % (
         seed_laser, seed_wls[0], seed_wls[-1], seed_power, pump_wl, pump_power)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
@@ -215,8 +254,17 @@ if __name__ == '__main__':
     exp = pcf_opa_spectra(instr_list)
 
     # RUN IT
-    [wavelength_list, spectrum_array] = exp.perform_experiment(params, filename=file_name)
+    [est_wl_list, pk_wl_arr] = exp.perform_experiment(params, filename=file_name)
+
+    # PLOT DATA
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
+    GUI = Window()
+    GUI.plot(est_wl_list, pk_wl_arr)
 
     # CLOSE INSTRUMENTS
     osa.close()
     sl.close()
+
+    sys.exit(app.exec_())
+

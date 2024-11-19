@@ -145,8 +145,10 @@ if __name__ == '__main__':
     wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.0mW"
     myLaser = PraeviumVCSEL(smu, wavvolt_file)
     myLaser.initialize()
-    [wav, volt] = myLaser.set_wavelength(1350)
-    print(volt)
+    # valid_wl_arr = myLaser.generate_valid_sweep(1240, 1360,1)
+    # print(valid_wl_arr)
+    [wav, volt] = myLaser.set_wavelength(1270)
+    # print(volt)
     # myLaser.continuous_sweep(dwell_time=1, num_sweeps=5)
     myLaser.close()
 

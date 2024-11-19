@@ -110,8 +110,8 @@ class PD_saturation(Experiment):
 
             # Read optical power through tap
             [tap_power, _] = self.pm.get_powers()
-            # power_list.append(tap_power*100*IL)
-            power_list.append(tap_power*2)
+            power_list.append(tap_power*100*IL)
+            # power_list.append(tap_power*2)
 
             # Read PD voltage from multimeter
             PD_volt = self.mm.measure_voltage('DC')
@@ -183,10 +183,12 @@ class PD_saturation(Experiment):
                    ylabel='Voltage (V)', title='PD Saturation', legend=None)
 
 import sys
-from pyqtgraph.Qt import QtGui, QtCore
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
-class Window(QtGui.QMainWindow):
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super(Window, self).__init__()
         self.setGeometry(100, 100, 1000, 500)
@@ -196,25 +198,30 @@ class Window(QtGui.QMainWindow):
         mainMenu = self.menuBar()
 
         # Set Window as central widget
-        self.w = QtGui.QWidget()
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
         self.setCentralWidget(self.w)
 
         ## Create a grid layout to manage the widgets size and position
-        self.layout = QtGui.QGridLayout()
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
         self.w.setLayout(self.layout)
 
         # plot widget
         self.p_power = pg.PlotWidget()
-        self.xlabel = self.p_power.setLabel('bottom', text='Pump Power', units='W')
-        self.ylabel = self.p_power.setLabel('left', text='PD Voltage', units='V')
+        self.xlabel = self.p_power.setLabel('bottom', text='Power', units='W')
+        self.ylabel = self.p_power.setLabel('left', text='Photodiode Voltage', units='V')
         self.layout.addWidget(self.p_power, 0, 0)
 
         self.p_power_handle = self.p_power.plot(pen=(1, 3))
 
         self.show()
 
+
     def plot(self, x, y):
         self.p_power_handle.setData(x,y)
+
+
 
 if __name__ == '__main__':
     # ------------------------------------------------------------
@@ -222,17 +229,17 @@ if __name__ == '__main__':
     i_limit = 0.003  # current limit [A]
 
     # OTHER PARAMETERS
-    photodiode = 'PD2'
-    pump_wavelength = 1272#[nm]
-    IL = 0.721
-    reverse_voltage = 10 #[V]
+    photodiode = 'FDS100'
+    pump_wavelength = 1080#[nm]
+    IL = 0.695
+    reverse_voltage = 25 #[V]
     RL = 50 #[ohms] Load resistor
-    Rf = 0 #[ohms] Filter resistor
+    Rf = 1000 #[ohms] Filter resistor
     Cf = 0.1e-6 #[F] Filter capacitance
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 3.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 1.5  # [V] Maximum transmission on VOA
+    init_voltage = 4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 1.0  # [V] Maximum transmission on VOA
     num_points = 100  # Number of points between init and end current
     voltage_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------
@@ -267,7 +274,8 @@ if __name__ == '__main__':
     pm.close()
 
     # PLOT DATA
-    app = QtGui.QApplication(sys.argv)
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     GUI = Window()
     GUI.plot(power_list, PD_voltage)
     sys.exit(app.exec_())
