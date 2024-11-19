@@ -92,19 +92,19 @@ class KeysightN9000B(MSA, Instrument):
         """
         self.gpib.write('CONF:CHP')
 
-    # def set_reference_level(self, ref_value, ref_pos):
-    #     """
-    #     Sets the reference power level and its position in the screen
-    #     :param ref_value: reference level with units. Ex:'-20dBM'
-    #     :param ref_pos: graticule line at which the reference level is (10--> Top, 0 --> Bottom)
-    #     :return:
-    #     """
-    #
-    #     if ref_value is not None:
-    #         self.gpib.write('RL %s;' % ref_value)
-    #
-    #     if ref_pos is not None:
-    #         self.gpib.write('RLPOS %d;' % ref_pos)
+    def set_reference_level(self, ref_value, ref_pos):
+        """
+        Sets the reference power level and its position in the screen
+        :param ref_value: reference level with units. Ex:'-20 dBm'
+        :param ref_pos: positions reference level at top, center, or bottom of Y scale display. Ex: (TOP, CENT, BOTT)
+        :return:
+        """
+
+        if ref_value is not None:
+            self.gpib.write(':DISP:SPUR:WIND:TRAC:Y:RLEV %s;' % ref_value)
+        if ref_pos is not None:
+            self.gpib.write(':DISP:DDEM:WIND:Y:RPOS %s' % ref_pos)
+
 
     # def set_peak_detection_type(self, type):
     #     """
@@ -134,25 +134,25 @@ class KeysightN9000B(MSA, Instrument):
     # #     if get_freq:
     # #         return self.gpib.query_ascii_values('IDFREQ?;')
     #
-    # def get_peak_info(self, trace=1, threshold=-200, excursion=5, sort_order="AMPL"):
-    #     """
-    #     Find the peak of the spectra and returns the frequency and the amplitude in a list
-    #     :param trace to search for peaks [1 to 6]
-    #     :param threshold: threshold for peak [dBm]
-    #     :param excursion: minimum amplitude variation for signal to be identified as peak [dB]
-    #     :param sort_order :"AMPL" or "FREQ"
-    #     :return: [freq, amps] list of peak frequencies, amplitudes
-    #     """
-    #     #Set to ASCII
-    #     self.gpib.write("FORM ASCII")
-    #
-    #     peaks = self.gpib.query_ascii_values("CALC:DATA%d:PEAK? %d,%d,%s" %(trace, threshold, excursion, sort_order))
-    #
-    #     num_peaks = peaks[0]
-    #     amps = peaks[1]
-    #     freqs = peaks[2]
-    #
-    #     return [freq[0], amp[0]]
+    def get_peak_info(self, trace=1, threshold=-200, excursion=5, sort_order="AMPL"):
+        """
+        Find the peak of the spectra and returns the frequency and the amplitude in a list
+        :param trace to search for peaks [1 to 6]
+        :param threshold: threshold for peak [dBm]
+        :param excursion: minimum amplitude variation for signal to be identified as peak [dB]
+        :param sort_order :"AMPL" or "FREQ"
+        :return: [freq, amps] list of peak frequencies, amplitudes
+        """
+        #Set to ASCII
+        self.gpib.write("FORM ASCII")
+
+        peaks = self.gpib.query_ascii_values("CALC:DATA%d:PEAK? %d,%d,%s" %(trace, threshold, excursion, sort_order))
+
+        num_peaks = peaks[0]
+        amps = peaks[1]
+        freqs = peaks[2]
+
+        return [freq[0], amp[0]]
     #
     # def take_sweep(self, num_avg=1):
     #     """
