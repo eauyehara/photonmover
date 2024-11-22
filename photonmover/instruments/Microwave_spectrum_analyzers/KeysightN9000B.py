@@ -25,7 +25,7 @@ class KeysightN9000B(MSA, Instrument):
 
         rm = visa.ResourceManager()
         try:
-            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=130000)
+            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=500000)
         except BaseException:
             raise ValueError('Cannot connect to the Keysight MSA')
 
@@ -34,7 +34,7 @@ class KeysightN9000B(MSA, Instrument):
         print('Disconnecting Keysight MSA')
         self.gpib.close()
 
-    def set_freq_axis(self, center, span, start_freq, end_freq):
+    def set_freq_axis(self, center=None, span=None, start_freq=None, end_freq=None):
         """
         Sets the center and span frequencies, if specified, or
         the start and end frequencies.
@@ -74,8 +74,8 @@ class KeysightN9000B(MSA, Instrument):
     def set_acq_bandwidth(self, res_bw, video_bw):
         """
         Sets the bandwidth of the acquisition filters.
-        :param res_bw: resolution bandwidth filter  (string with units)
-        :param video_bw: video vandiwdth filter (string with units)
+        :param res_bw: resolution bandwidth filter  (string with units) ex. '1.0kHz'
+        :param video_bw: video bandiwdth filter (string with units)
         :return:
         """
 
@@ -85,6 +85,12 @@ class KeysightN9000B(MSA, Instrument):
         if video_bw is not None:
             self.gpib.write('BAND:VID %s;' % video_bw)
 
+    def set_num_points(self, points):
+        """
+        Sets number of points read in sweep
+        """
+        self.gpib.write('SWE:POIN %d' % points)
+
     def instrument_preset(self):
         """
         Sets the instrument to its preset state
@@ -92,18 +98,27 @@ class KeysightN9000B(MSA, Instrument):
         """
         self.gpib.write('CONF:CHP')
 
-    def set_reference_level(self, ref_value, ref_pos):
+    def get_sweep_time(self):
         """
-        Sets the reference power level and its position in the screen
-        :param ref_value: reference level with units. Ex:'-20 dBm'
-        :param ref_pos: positions reference level at top, center, or bottom of Y scale display. Ex: (TOP, CENT, BOTT)
-        :return:
+        returns instrument sweep time
         """
+        return self.gpib.query_ascii_values('SWE:TIME?')[0]
 
-        if ref_value is not None:
-            self.gpib.write(':DISP:SPUR:WIND:TRAC:Y:RLEV %s;' % ref_value)
-        if ref_pos is not None:
-            self.gpib.write(':DISP:DDEM:WIND:Y:RPOS %s' % ref_pos)
+
+    # def set_reference_level(self, ref_value, ref_pos='TOP'):
+    #     """
+    #     Doesn't work...need to find the right commands
+    #     Sets the reference power level and its position in the screen
+    #     :param ref_value: reference level with units. Ex:'-20 dBm'
+    #     :param ref_pos: positions reference level at top, center, or bottom of Y scale display. Ex: (TOP, CENT, BOTT)
+    #     :return:
+    #     """
+    #
+    #     if ref_value is not None:
+    #         # self.gpib.write(':DISP:SPUR:WIND:TRAC:Y:RLEV %s;' % ref_value)
+    #         self.gpib.write(':SENS:SPUR:POW:LEV %s;' % ref_value)
+    #     # if ref_pos is not None:
+    #     #     self.gpib.write(':DISP:DDEM:WIND:Y:RPOS %s' % ref_pos)
 
 
     # def set_peak_detection_type(self, type):
@@ -147,12 +162,11 @@ class KeysightN9000B(MSA, Instrument):
         self.gpib.write("FORM ASCII")
 
         peaks = self.gpib.query_ascii_values("CALC:DATA%d:PEAK? %d,%d,%s" %(trace, threshold, excursion, sort_order))
-
         num_peaks = peaks[0]
         amps = peaks[1]
         freqs = peaks[2]
 
-        return [freq[0], amp[0]]
+        return [freqs, amps]
     #
     # def take_sweep(self, num_avg=1):
     #     """
@@ -199,5 +213,9 @@ if __name__ == '__main__':
     hp.initialize()
     # hp.read_data(1, filename='Dev1_0V_CW976_4.48mW_RBW24kHz_atten0dB_10MHz-3GHz_RLNA08G25G60')
     # hp.read_data(1, filename='MSA_BOA-700mA9ns_4.1mA_35MHzLP_36MHzBP_LNA_RBW-VBW_1Hz_25-45MHz')
-    hp.read_data(1, filename='MSA_diamondSig4-Oeland_BOA700mACW_Dev1-60V-1254.7nm_manualLock_RBW1Hz_30-40MHz')
+    # hp.read_data(1, filename='MSA_diamondSig4-Oeland_BOA700mACW_Dev1-60V-1254.7nm_manualLock_RBW1Hz_30-40MHz')
+    hp.set_num_points(10000)
+    # [freq, amp] = hp.get_peak_info()
+    # print(freq)
+    # print(amp)
     hp.close()

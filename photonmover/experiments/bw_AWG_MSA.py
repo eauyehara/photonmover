@@ -9,8 +9,7 @@ from photonmover.Interfaces.MSA import MSA
 from photonmover.Interfaces.WaveformGenerator import WaveformGenerator
 
 # This is only necessary for the example
-from photonmover.instruments.Microwave_spectrum_analyzers.HP70900A \
-    import HP70900A
+from photonmover.instruments.Microwave_spectrum_analyzers.KeysightN9000B import KeysightN9000B
 from photonmover.instruments.Arbitrary_waveform_generators.Agilent81180A \
     import Agilent81180A
 
@@ -18,7 +17,6 @@ from photonmover.instruments.Arbitrary_waveform_generators.Agilent81180A \
 import time
 import numpy as np
 import csv
-
 
 class BW_AWG_and_MSA(Experiment):
 
@@ -88,9 +86,19 @@ class BW_AWG_and_MSA(Experiment):
         biases = params["voltages"]
         amps = params["amplitudes"]
         freqs = params["freqs"]
+        atten = params["atten"]
+        rbw = params["rbw"]
 
-        self.awg.set_waveform('SIN', self.freq[0], self.amp[0], self.bias[0])
+        #Configure MSA bandwidth, frequency window
+        buffer = 50e3
+        points = 8000 #affects frequency resolution
+        self.msa.set_acq_bandwidth(rbw,rbw)
+        self.msa.set_freq_axis(start_freq=str(freqs[0]-buffer)+'Hz', end_freq=str(freqs[-1]+buffer)+'Hz')
+        self.msa.set_num_points(points)
+
+        self.awg.set_waveform('SIN', freqs[0], amps[0], biases[0])
         self.awg.turn_on()
+        time.sleep(1)
 
         for offset in biases:
             for amp in amps:
@@ -100,8 +108,7 @@ class BW_AWG_and_MSA(Experiment):
                     (offset * 1e3, amp * 1e3))
 
                 # Configure AWG and turn on
-                self.awg.set_waveform('SIN', self.freq[0], amp, offset)
-                self.awg.turn_on()
+                self.awg.set_waveform('SIN', freqs[0], amp, offset)
 
                 peak_freqs = []
                 peak_amps = []
@@ -113,18 +120,20 @@ class BW_AWG_and_MSA(Experiment):
 
                     # Change the frequency of the applied signal
                     self.awg.set_frequency(freq)
-                    print('Set AWG Freq.')
+                    print('Set AWG Freq')
                     # Wait 1 second
                     time.sleep(1)
 
                     # Set the MSA to get the signal of interest
-                    freq_string = "%.4f MHZ" % (freq * 1e-6)
-                    span_string = "%.4f MHZ" % np.minimum(
-                        np.maximum((2 * freq * 1e-6), 0.5), 1)
-                    self.msa.set_freq_axis(
-                        freq_string, span_string, None, None)
-                    time.sleep(2)
+                    # freq_string = "%.4f MHZ" % (freq * 1e-6)
+                    # span_string = "%.4f MHZ" % np.minimum(
+                    #     np.maximum((2 * freq * 1e-6), 0.5), 1)
+                    # self.msa.set_freq_axis(
+                    #     freq_string, span_string, None, None)
+                    # time.sleep(2)
 
+                    # Wait for MSA sweep and data read
+                    time.sleep(msa.get_sweep_time()+1.0)
                     # Get peak information
                     f_peak, amp_val = self.msa.get_peak_info()
                     peak_freqs.append(f_peak)
@@ -132,36 +141,38 @@ class BW_AWG_and_MSA(Experiment):
                     print(
                         'Peak at %.4f MHz with strength %.4f dB' %
                         (f_peak * 1e-6, amp_val))
-                    print('Got peak data')
 
                     # Get the spectrum and save it
                     time_tuple = time.localtime()
 
-                    if filename is not None:
-                        file_name = "%s-freq=%.4fMHz-Vgs_amp=%.3fV-Vgs_offs=%.3fV--%d#%d#%d_%d#%d#%d.csv" % (
-                            filename,
-                            freq * 1e-6,
-                            amp,
-                            offset,
-                            time_tuple[0],
-                            time_tuple[1],
-                            time_tuple[2],
-                            time_tuple[3],
-                            time_tuple[4],
-                            time_tuple[5])
-                    else:
-                        file_name = None
-
-                    self.msa.read_data(file_name)
-
-                    print('Got trace for offset %.4f mV...' % (offset * 1e3))
-                    print('-----------------------------')
+                    # if filename is not None:
+                    #     file_name = "%s-freq=%.4fMHz-Vgs_amp=%.3fV-Vgs_offs=%.3fV--%d#%d#%d_%d#%d#%d.csv" % (
+                    #         filename,
+                    #         freq * 1e-6,
+                    #         amp,
+                    #         offset,
+                    #         time_tuple[0],
+                    #         time_tuple[1],
+                    #         time_tuple[2],
+                    #         time_tuple[3],
+                    #         time_tuple[4],
+                    #         time_tuple[5])
+                    # else:
+                    #     file_name = None
+                    #
+                    # self.msa.read_data(file_name)
+                    #
+                    # print('Got trace for offset %.4f mV...' % (offset * 1e3))
+                    # print('-----------------------------')
 
                 if filename is not None:
-                    summary_filename = "%s-peaks_vs_freq_summary-Vgs_amp=%.3fV-Vgs_offs=%.3fV--%d#%d#%d_%d#%d#%d.csv" % (
+                    summary_filename = "%s-S21_freqs=%.0e-%.0eHz-V_amp=%.2fV-V_offs=%.2fV-atten=%ddB--%d-%d-%d_%d-%d-%d.csv" % (
                         filename,
+                        freqs[0],
+                        freqs[-1],
                         amp,
                         offset,
+                        atten,
                         time_tuple[0],
                         time_tuple[1],
                         time_tuple[2],
@@ -210,24 +221,67 @@ class BW_AWG_and_MSA(Experiment):
             legend=None)
 
 
+import sys
+# from pyqtgraph.Qt import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
+import pyqtgraph as pg
+
+# class Window(QtGui.QMainWindow):
+class Window(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(Window, self).__init__()
+        self.setGeometry(100, 100, 1000, 500)
+        self.setWindowTitle("S21")
+
+        # Menu definition
+        mainMenu = self.menuBar()
+
+        # Set Window as central widget
+        # self.w = QtGui.QWidget()
+        self.w = QtWidgets.QWidget()
+        self.setCentralWidget(self.w)
+
+        ## Create a grid layout to manage the widgets size and position
+        # self.layout = QtGui.QGridLayout()
+        self.layout = QtWidgets.QGridLayout()
+        self.w.setLayout(self.layout)
+
+        # plot widget
+        self.p_power = pg.PlotWidget()
+        self.xlabel = self.p_power.setLabel('bottom', text='Frequency', units='Hz')
+        self.ylabel = self.p_power.setLabel('left', text='Power', units='dBm')
+        self.layout.addWidget(self.p_power, 0, 0)
+
+        self.p_power_handle = self.p_power.plot(pen=(1, 3))
+
+        self.show()
+
+
+    def plot(self, x, y):
+        self.p_power_handle.setData(x,y)
+
 if __name__ == '__main__':
 
     # INSTRUMENTS
-    msa = HP70900A()
+    msa = KeysightN9000B()
     awg = Agilent81180A()
 
     msa.initialize()
     awg.initialize()
 
     # EXPERIMENT PARAMETERS
-    vgs_amp = [0.15]
+    device = 'PD_FDS100-25V-DC0.548mA'
+    atten = 0  # [dB] attenuation after awg
+    rbw = '10kHz'# MSA rbw
 
-    vgs_offset = [-0.07, -0.02]
+    vgs_amp = [0.300] #Agilent81180A min Vpp=50mV
+    vgs_offset = [0]
+
 
     start_freq = 100e3
-    end_freq = 100e6
-    num_freq = 3
-    log_sweep = True  # If True, it does a logarithmic sweep
+    end_freq = 50e6
+    num_freq = 100
+    log_sweep = False  # If True, it does a logarithmic sweep
     if log_sweep:
         freq_list = np.logspace(
             np.log10(start_freq),
@@ -236,7 +290,7 @@ if __name__ == '__main__':
     else:
         freq_list = np.linspace(start_freq, end_freq, num_freq)
 
-    base_file_name = './data/trial'
+    base_file_name = './data/' + device
 
     # SET UP THE EXPERIMENT
     instr_list = [msa, awg]
@@ -244,11 +298,21 @@ if __name__ == '__main__':
     params = {
         "voltages": vgs_offset,
         "amplitudes": vgs_amp,
-        "freqs": freq_list}
+        "freqs": freq_list,
+        "atten": atten,
+        "rbw": rbw}
 
     # RUN IT
-    exp.perform_experiment(params, filename=base_file_name)
+    [peak_freqs, peak_amps] = exp.perform_experiment(params, filename=base_file_name)
+
+    # PLOT DATA
+    # app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
+    GUI = Window()
+    GUI.plot(peak_freqs, peak_amps)
 
     # CLOSE INSTRUMENTS
     msa.close()
     awg.close()
+
+    sys.exit(app.exec_())

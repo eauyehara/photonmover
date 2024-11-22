@@ -4,7 +4,7 @@ from photonmover.Interfaces.Instrument import Instrument
 import numpy as np
 import matplotlib.pyplot as plt
 
-GPIB_ADDR = "GPIB1::2::INSTR"  # GPIB adress
+GPIB_ADDR = "GPIB0::25::INSTR"  # GPIB adress
 
 
 class Agilent81180A(Instrument, WaveformGenerator):
@@ -183,6 +183,8 @@ if __name__ == '__main__':
     awg = Agilent81180A()
     awg.initialize()
     awg.turn_on()
-    awg.set_waveform('SIN', 2e6, 2, 0.5)
-    awg.turn_on()
+    vpp = 0.05 #minimum value
+    off = 0
+    awg.set_waveform('SIN', 2e6, vpp, off)
+    # awg.turn_off()
     awg.close()
