@@ -93,7 +93,7 @@ class BW_AWG_and_MSA(Experiment):
         buffer = 50e3
         points = 8000 #affects frequency resolution
         self.msa.set_acq_bandwidth(rbw,rbw)
-        self.msa.set_freq_axis(start_freq=str(freqs[0]-buffer)+'Hz', end_freq=str(freqs[-1]+buffer)+'Hz')
+        self.msa.set_freq_axis(start_freq=str(freqs[0]-20e3)+'Hz', end_freq=str(freqs[-1]+buffer)+'Hz')
         self.msa.set_num_points(points)
 
         self.awg.set_waveform('SIN', freqs[0], amps[0], biases[0])
@@ -270,11 +270,11 @@ if __name__ == '__main__':
     awg.initialize()
 
     # EXPERIMENT PARAMETERS
-    device = 'PD_FDS100-25V-DC0.548mA'
-    atten = 0  # [dB] attenuation after awg
+    device = "LP_BLP-21.4" #'PD_818-BB-35F_CALIB'
+    atten = 0 #26  # [dB] attenuation after awg
     rbw = '10kHz'# MSA rbw
 
-    vgs_amp = [0.300] #Agilent81180A min Vpp=50mV
+    vgs_amp = [0.050] #Agilent81180A min Vpp=50mV
     vgs_offset = [0]
 
 

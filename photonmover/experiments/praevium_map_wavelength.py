@@ -251,15 +251,15 @@ if __name__ == '__main__':
 
     # OTHER PARAMETERS
     device = 'Dev1a'
-    pump_laser = 'CW976' #'OEland1038' #'CW976'
-    pump_power = 5.0 #mW
-    IL = 1
+    pump_laser = 'OEland1075.5' #'OEland1038' #'CW976'
+    pump_power = 10.0 #mW
+    IL = 0.52
     RBW = 0.1 #nm
     temp = 25 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 80 # [V]
+    end_voltage = 75 # [V]
     increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------

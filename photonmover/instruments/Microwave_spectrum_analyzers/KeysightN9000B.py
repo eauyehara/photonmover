@@ -211,11 +211,8 @@ class KeysightN9000B(MSA, Instrument):
 if __name__ == '__main__':
     hp = KeysightN9000B()
     hp.initialize()
-    # hp.read_data(1, filename='Dev1_0V_CW976_4.48mW_RBW24kHz_atten0dB_10MHz-3GHz_RLNA08G25G60')
-    # hp.read_data(1, filename='MSA_BOA-700mA9ns_4.1mA_35MHzLP_36MHzBP_LNA_RBW-VBW_1Hz_25-45MHz')
-    # hp.read_data(1, filename='MSA_diamondSig4-Oeland_BOA700mACW_Dev1-60V-1254.7nm_manualLock_RBW1Hz_30-40MHz')
-    hp.set_num_points(10000)
-    # [freq, amp] = hp.get_peak_info()
-    # print(freq)
-    # print(amp)
+    # hp.read_data(1, filename='RIN_OEland1038-2mW_BLP-21.4_FDS100-25V-0.76mA_SA-230F5_100kHz-40MHz_RBW10Hz')
+    hp.read_data(1, filename='VaryDev1a_FGA21-25V_diamond_electronicNoise_RBW1Hz_SA-230F5_9-10MHz')
+    # hp.read_data(1, filename='MSA_diamond-Oeland_BOA700mACW_Dev1a-60V-1254.7nm_manualLock_RBW1Hz_30-40MHz')
     hp.close()
+

@@ -124,7 +124,7 @@ class PD_saturation(Experiment):
         if filename is not None:
             # Save the data in a csv file
             time_tuple = time.localtime()
-            complete_filename = "%s_%d-%d-%d_%d-%d-%d.csv" % (filename,
+            complete_filename = "./data/%s_%d-%d-%d_%d-%d-%d.csv" % (filename,
                                                             time_tuple[0],
                                                             time_tuple[1],
                                                             time_tuple[2],
@@ -140,7 +140,7 @@ class PD_saturation(Experiment):
 
                 # Save the parameters in a .mat file
                 time_tuple = time.localtime()
-                params_filename = "params_%s_%d-%d-%d_%d-%d-%d.mat" % (
+                params_filename = "./data/params_%s_%d-%d-%d_%d-%d-%d.mat" % (
                     filename,
                     time_tuple[0],
                     time_tuple[1],
@@ -229,10 +229,10 @@ if __name__ == '__main__':
     i_limit = 0.003  # current limit [A]
 
     # OTHER PARAMETERS
-    photodiode = 'FDS100'
-    pump_wavelength = 1080#[nm]
-    IL = 0.695
-    reverse_voltage = 25 #[V]
+    photodiode = 'FGA21'
+    pump_wavelength = 1038#[nm]
+    IL = 0.671
+    reverse_voltage = 55 #[V]
     RL = 50 #[ohms] Load resistor
     Rf = 1000 #[ohms] Filter resistor
     Cf = 0.1e-6 #[F] Filter capacitance
@@ -266,7 +266,7 @@ if __name__ == '__main__':
     exp = PD_saturation(instr_list)
 
     # RUN IT
-    [power_list, PD_voltage] = exp.perform_experiment(params, filename=file_name)
+    [power_list, PD_voltage] = exp.perform_experiment(params, filename= file_name)
 
     # CLOSE INSTRUMENTS
     mm.close()

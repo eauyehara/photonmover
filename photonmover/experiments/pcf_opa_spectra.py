@@ -231,7 +231,8 @@ if __name__ == '__main__':
     RBW = 0.5  # nm (OSA)
 
     # EXPERIMENT PARAMETERS
-    wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.00mW_temp"
+    wavvolt_dir = "./wavvolt/"
+    wavvolt_file = wavvolt_dir + "wavvolt_Dev1a_25C_CW976_5.00mW_temp"
     # ------------------------------------------------------------
 
     # INSTRUMENTS

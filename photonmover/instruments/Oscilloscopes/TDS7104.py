@@ -298,5 +298,5 @@ if __name__ == '__main__':
     osc = TDS7104()
     osc.initialize()
 
-    osc.read_waveform([1], 'sync_818-BB-35F_BOA-10ns70MHz_trigOEland1040_3')
+    osc.read_waveform([1], 'unsync_OE1075.5_818-BB-35F_BOA-GSDev1a1253.3_Pulsed52ns9.5MHz')
     osc.close()
