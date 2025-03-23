@@ -1,15 +1,16 @@
 import pyvisa as visa
-from photonmover.Interfaces.SignalGenerator import SignalGenerator
+# from photonmover.Interfaces.SignalGenerator import SignalGenerator
 from photonmover.Interfaces.Instrument import Instrument
 import numpy as np
 
 
-class AnritsuMG3692B(Instrument, SignalGenerator):
+class AnritsuMG3692B(Instrument):
     """
     Code for controlling Keysight B2902A through GPIB
     """
 
-    def __init__(self, gpib_address="GPIB1::1::INSTR"):
+    def __init__(self, gpib_address="GPIB0::6::INSTR"):
+    # def __init__(self):
         super().__init__()
 
         self.gpib = None
@@ -109,6 +110,6 @@ if __name__ == '__main__':
     sig_gen = AnritsuMG3692B()
     sig_gen.initialize()
     sig_gen.turn_on()
-    sig_gen.set_frequency(10e9)
+    sig_gen.set_frequency(1e6)
     sig_gen.turn_off()
     sig_gen.close()

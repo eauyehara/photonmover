@@ -26,7 +26,7 @@ class HP70951B(MSA, Instrument):
 
         rm = visa.ResourceManager()
         try:
-            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=5000)
+            self.gpib = rm.open_resource(GPIB_ADDRESS, timeout=15000)
         except BaseException:
             raise ValueError('Cannot connect to the HP OSA')
 

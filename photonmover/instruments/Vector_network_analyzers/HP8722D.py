@@ -18,7 +18,7 @@ class HP8722D(VNA, Instrument):
 
     """
 
-    def __init__(self, gpib_address="GPIB1::25::INSTR"):
+    def __init__(self, gpib_address="GPIB0::25::INSTR"):
         super().__init__()
         self.gpib = None
         self.gpib_address = gpib_address
@@ -322,5 +322,5 @@ if __name__ == '__main__':
     hp.initialize()
     # .read_data_lin_sweep('D:\\photonmover_MARC\\new_photonmover\\instruments\\Vector_network_analyzers\\'
     #                      'bw_0_8Vdc_1547_18nm_-20dBm.csv')
-    hp.read_data('C:\\Users\\Prismo\\Desktop\\Marc\\trial_log.csv')
+    hp.read_data('S21_AFS42-00101000_-20dBm_50MHz-20GHz_1.csv')
     hp.close()

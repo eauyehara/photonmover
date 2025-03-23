@@ -150,7 +150,7 @@ class praevium_map_wavelength(Experiment):
                     params["device"],
                     params["temp"],
                     params["pump_laser"],
-                    params["pump_power"]
+                    params["pump_power"]*params["IL"]
                 )
 
                 self.save_wavvolt(wavvolt_filename, np.array(meas_volt_list), np.array(pk_wl_list))
@@ -165,7 +165,7 @@ class praevium_map_wavelength(Experiment):
         a measurement to be performed
         """
 
-        return ["voltage_list", "device", "pump_laser","pump_power","temp"]
+        return ["voltage_list", "device", "pump_laser","pump_power","temp", "IL"]
 
     def save_wavvolt(self, filename, volt, peak_wl, f_interp=5000):
         """
@@ -251,15 +251,15 @@ if __name__ == '__main__':
 
     # OTHER PARAMETERS
     device = 'Dev1a'
-    pump_laser = 'OEland1075.5' #'OEland1038' #'CW976'
-    pump_power = 10.0 #mW
+    pump_laser = 'OEland1076' #'OEland1038' #'CW976'
+    pump_power = 11 #mW
     IL = 0.52
     RBW = 0.1 #nm
     temp = 25 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 75 # [V]
+    end_voltage = 70 # [V]
     increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------
@@ -279,7 +279,7 @@ if __name__ == '__main__':
 
     # SET UP THE EXPERIMENT
     instr_list = [osa, ps]
-    params = {"voltage_list": voltage_list, "device": device, "pump_laser": pump_laser, "pump_power": pump_power, "temp": temp}
+    params = {"voltage_list": voltage_list, "device": device, "pump_laser": pump_laser, "pump_power": pump_power, "temp": temp, "IL": IL}
     exp = praevium_map_wavelength(instr_list)
 
     # RUN IT

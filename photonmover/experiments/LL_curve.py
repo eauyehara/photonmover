@@ -287,8 +287,8 @@ if __name__ == '__main__':
     tuning_voltage = 80 # [V]
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 4.5 #4.0  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 2.70#2.2 #2.24 #1.653  # [V] Maximum transmission on VOA
+    init_voltage = 4.5  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 2.2 #2.24 #1.653  # [V] Maximum transmission on VOA
     num_points = 250  # Number of points between init and end current
     volt_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------

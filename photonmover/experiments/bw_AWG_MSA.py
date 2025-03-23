@@ -6,12 +6,13 @@ from photonmover.utils.plot_utils import plot_graph
 # - You use an Interface if any instrument of that category can be used
 # - You use a specific instrument if you can only use that specific model
 from photonmover.Interfaces.MSA import MSA
-from photonmover.Interfaces.WaveformGenerator import WaveformGenerator
+# from photonmover.Interfaces.WaveformGenerator import WaveformGenerator
+from photonmover.Interfaces.SignalGenerator import SignalGenerator
 
 # This is only necessary for the example
 from photonmover.instruments.Microwave_spectrum_analyzers.KeysightN9000B import KeysightN9000B
-from photonmover.instruments.Arbitrary_waveform_generators.Agilent81180A \
-    import Agilent81180A
+# from photonmover.instruments.Arbitrary_waveform_generators.Agilent81180A import Agilent81180A
+from photonmover.instruments.signal_generators.AnritsuMG3692B import AnritsuMG3692B
 
 # General imports
 import time
@@ -47,7 +48,8 @@ class BW_AWG_and_MSA(Experiment):
         """
 
         for instr in instrument_list:
-            if isinstance(instr, WaveformGenerator):
+            # if isinstance(instr, WaveformGenerator):
+            if isinstance(instr, AnritsuMG3692B):
                 self.awg = instr
             if isinstance(instr, MSA):
                 self.msa = instr
@@ -96,7 +98,9 @@ class BW_AWG_and_MSA(Experiment):
         self.msa.set_freq_axis(start_freq=str(freqs[0]-20e3)+'Hz', end_freq=str(freqs[-1]+buffer)+'Hz')
         self.msa.set_num_points(points)
 
-        self.awg.set_waveform('SIN', freqs[0], amps[0], biases[0])
+        # self.awg.set_waveform('SIN', freqs[0], amps[0], biases[0])
+        self.awg.set_frequency(freqs[0])
+        self.awg.set_power(amps[0])
         self.awg.turn_on()
         time.sleep(1)
 
@@ -104,11 +108,15 @@ class BW_AWG_and_MSA(Experiment):
             for amp in amps:
 
                 print(
-                    'Starting freq sweep for offs %.4f mV, amp %.4f mV...' %
-                    (offset * 1e3, amp * 1e3))
+                    # 'Starting freq sweep for offs %.4f mV, amp %.4f mV...' %
+                    # (offset * 1e3, amp * 1e3))
+                    'Starting freq sweep for amp %.4f dBm...' %
+                    amp)
 
                 # Configure AWG and turn on
-                self.awg.set_waveform('SIN', freqs[0], amp, offset)
+                # self.awg.set_waveform('SIN', freqs[0], amp, offset)
+                self.awg.set_power(amp)
+                self.awg.turn_on()
 
                 peak_freqs = []
                 peak_amps = []
@@ -119,10 +127,11 @@ class BW_AWG_and_MSA(Experiment):
                     print('Measuring %.4f MHz...' % (freq * 1e-6))
 
                     # Change the frequency of the applied signal
+                    # self.awg.set_frequency(freq)
                     self.awg.set_frequency(freq)
                     print('Set AWG Freq')
                     # Wait 1 second
-                    time.sleep(1)
+                    time.sleep(0.5)
 
                     # Set the MSA to get the signal of interest
                     # freq_string = "%.4f MHZ" % (freq * 1e-6)
@@ -187,6 +196,7 @@ class BW_AWG_and_MSA(Experiment):
                         writer.writerow(peak_amps)
 
         self.data = [peak_freqs, peak_amps]
+        self.awg.turn_off()
 
         return [peak_freqs, peak_amps]
 
@@ -264,22 +274,24 @@ if __name__ == '__main__':
 
     # INSTRUMENTS
     msa = KeysightN9000B()
-    awg = Agilent81180A()
+    # awg = Agilent81180A()
+    awg = AnritsuMG3692B()
 
     msa.initialize()
     awg.initialize()
 
     # EXPERIMENT PARAMETERS
-    device = "LP_BLP-21.4" #'PD_818-BB-35F_CALIB'
-    atten = 0 #26  # [dB] attenuation after awg
-    rbw = '10kHz'# MSA rbw
+    device = "LNA_MITEQ_AFS42-00101000_0.1-10GHz_100pts" #'PD_818-BB-35F_CALIB'
+    # device = "LNA_MITEQ_AFS42-00101000_1-100MHz_100pts" #'PD_818-BB-35F_CALIB'
+    atten = 18  # [dB] attenuation after awg
+    rbw = '500kHz'# MSA rbw
 
-    vgs_amp = [0.050] #Agilent81180A min Vpp=50mV
+    vgs_amp = [-20] #dBm #[0.050] #Agilent81180A min Vpp=50mV
     vgs_offset = [0]
 
 
-    start_freq = 100e3
-    end_freq = 50e6
+    start_freq = 100e6
+    end_freq = 10e9
     num_freq = 100
     log_sweep = False  # If True, it does a logarithmic sweep
     if log_sweep:

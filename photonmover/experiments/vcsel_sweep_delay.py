@@ -6,14 +6,33 @@ from photonmover.utils.plot_utils import plot_graph
 # - You use a specific instrument if you can only use that specific model
 from photonmover.instruments.Oscilloscopes.HP54750A import HP54750A
 from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
+from photonmover.instruments.Power_Supplies.AgilentE3633A import AgilentE3633A
 
 # General imports
 import time
+import os
 import numpy as np
 import csv
 from scipy import io
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
+
+def load_delayvolt(delay_dir,filename):
+    """
+    Read wavelength over voltage data from mat file
+    """
+    full_filename = delay_dir + "\\" + filename + ".mat"
+    a = io.loadmat(full_filename)
+    VOA_interp = a['VOA_est_interp'][0]
+    VCSEL_interp = a['V_MEMSinterp'][0]
+    return [VOA_interp, VCSEL_interp]
+
+def interp_VOA(VCSEL_set, VOA_interp, VCSEL_interp):
+    VOA_set = []
+    for i in VCSEL_set:
+        ind = np.argmin(np.abs(VCSEL_interp - VCSEL_set[i]))
+        VOA_set.append(VOA_interp[ind])
+    return  np.array(VOA_set)
 
 class vcsel_sweep_delay(Experiment):
 
@@ -26,7 +45,7 @@ class vcsel_sweep_delay(Experiment):
         # It is always good practice to initialize variables in the init
 
         # Instruments
-        self.osa = None
+        self.voa = None
         self.ps = None
         self.osc = None
 
@@ -47,8 +66,10 @@ class vcsel_sweep_delay(Experiment):
                 self.ps = instr
             if isinstance(instr, HP54750A):
                 self.osc = instr
+            if isinstance(instr, AgilentE3633A):
+                self.voa = instr
 
-        if (self.ps is not None) and (self.osc is not None):
+        if (self.ps is not None) and (self.osc is not None) and (self.voa is not None):
             return True
         else:
             return False
@@ -77,6 +98,7 @@ class vcsel_sweep_delay(Experiment):
         params = self.check_all_params(params)
 
         voltage_list = params["voltage_list"]
+        voa_set = params["voa_set"]
 
         meas_volt_list = []
         t_peak = []
@@ -92,13 +114,14 @@ class vcsel_sweep_delay(Experiment):
             print('Setting power supply to %.4f V...' % volt)
             # Set the voltage
             self.ps.set_voltage(volt)
+            self.voa.set_voltage(voa_set[ind])
 
             meas_volt = self.ps.measure_voltage()
             print('Power Supply voltage set to %0.4f V' % meas_volt)
             meas_volt_list.append(meas_volt) #[V]
 
             # Wait [s]
-            time.sleep(10)
+            time.sleep(7)
 
             #Read osc trace and store in wavelength_array
             [_, waveform] = self.osc.read_waveform([1])
@@ -122,12 +145,12 @@ class vcsel_sweep_delay(Experiment):
         print('-----------------------------')
 
         #Ramp back to initial voltage
-        reverse_voltage_list = list(voltage_list)
-        reverse_voltage_list.reverse()
-        reverse_voltage_str = str(reverse_voltage_list).replace('[', '{')
-        reverse_voltage_str = reverse_voltage_str.replace(']', '}')
-
-        ps.linear_volt_sweep(volt_list=reverse_voltage_str, settling_time=.3, num_points=len(reverse_voltage_list))
+        # reverse_voltage_list = list(voltage_list)
+        # reverse_voltage_list.reverse()
+        # reverse_voltage_str = str(reverse_voltage_list).replace('[', '{')
+        # reverse_voltage_str = reverse_voltage_str.replace(']', '}')
+        #
+        # ps.linear_volt_sweep(volt_list=reverse_voltage_str, settling_time=.3, num_points=len(reverse_voltage_list))
 
         if filename is not None:
             # Save the data in a csv file
@@ -167,7 +190,7 @@ class vcsel_sweep_delay(Experiment):
         a measurement to be performed
         """
 
-        return ["voltage_list", "device", "pump_laser","pump_power","temp"]
+        return ["voltage_list", "voa_set", "device", "pump_laser","pump_power","temp"]
 
 
     def plot_data(self, canvas_handle, data=None):
@@ -229,36 +252,44 @@ if __name__ == '__main__':
     i_limit = 100e-9  # current limit
 
     # OTHER PARAMETERS
-    device = 'Dev1a_avg16'
-    pump_laser = 'OEland76' #'OEland1076' #'OEland1038' #'CW976'
-    pump_power = 6 #mW
+    device = 'Dev1a_avg4'
+    pump_laser = 'OEland1078_202mW_3' #'OEland1076' #'OEland1038' #'CW976'
+    pump_power = 4.4 #mW
     IL = 0.52
     RBW = 0.1 #nm
     temp = 25 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 75 # [V]
-    increment = 2  # Voltage increment
+    end_voltage = 55 # [V]
+    increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
+
+    delayvolt_file = "delayvolt3"
+    delay_dir = os.path.join(os.getcwd(),"delayvolt")
     # ------------------------------------------------------------
 
     # INSTRUMENTS
-    # ps = KeysightE36106B(current_limit=i_limit)
     ps = Keithley2635A(current_compliance=100e-9, voltage_compliance=81) #A, V
     osc = HP54750A()
+    voa = AgilentE3633A(current_limit=i_limit)
+
+    [VOA_interp, VCSEL_interp] = load_delayvolt(delay_dir, delayvolt_file)
+    voa_set = interp_VOA(voltage_list, VOA_interp, VCSEL_interp)
+
 
     # Initialize instruments
     ps.initialize()
     osc.initialize()
+    voa.initialize()
 
     # file_name = 'LL_dev1_50V_pm1258_Solstis980nm'  # Filename where to save csv data
     file_name = "tuningDelay_%s_%d-%dV_%dC_%s_%3.2fmW_RBW%3.2fnm" % (
         device, init_voltage, end_voltage, temp, pump_laser, pump_power*IL, RBW)  # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
-    instr_list = [osc, ps]
-    params = {"voltage_list": voltage_list, "device": device, "pump_laser": pump_laser, "pump_power": pump_power, "temp": temp}
+    instr_list = [osc, ps, voa]
+    params = {"voltage_list": voltage_list, "voa_set": voa_set, "device": device, "pump_laser": pump_laser, "pump_power": pump_power, "temp": temp}
     exp = vcsel_sweep_delay(instr_list)
 
     # RUN IT
