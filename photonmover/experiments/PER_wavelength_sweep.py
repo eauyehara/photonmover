@@ -7,12 +7,15 @@ from photonmover.utils.plot_utils import plot_graph
 from photonmover.instruments.Power_meters.Thorlabs import ThorlabsPowerMeter
 # from photonmover.instruments.Power_Supplies.KeysightE36106B import KeysightE36106B
 from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
+from photonmover.instruments.Power_Supplies.AgilentE3633A import AgilentE3633A
+
 
 # General imports
 import time
 import numpy as np
 import csv
 from scipy import io
+import os
 
 from ctypes import create_string_buffer, c_int16, c_double, byref, c_char_p, c_bool
 
@@ -31,6 +34,22 @@ def load_wavvolt(filename):
     volt_list = a['volt_select'][0]
     return [volt_list, wav_list]
 
+def load_delayvolt(delay_dir,filename):
+    """
+    Read wavelength over voltage data from mat file
+    """
+    full_filename = delay_dir + "\\" + filename + ".mat"
+    a = io.loadmat(full_filename)
+    VOA_interp = a['VOA_est_interp'][0]
+    VCSEL_interp = a['V_MEMSinterp'][0]
+    return [VOA_interp, VCSEL_interp]
+
+def interp_VOA(VCSEL_set, VOA_interp, VCSEL_interp):
+    VOA_set = []
+    for i, volt in enumerate(VCSEL_set):
+        ind = np.argmin(np.abs(VCSEL_interp - VCSEL_set[i]))
+        VOA_set.append(VOA_interp[ind])
+    return  np.array(VOA_set)
 
 class PER_wavelength_sweep(Experiment):
 
@@ -46,7 +65,7 @@ class PER_wavelength_sweep(Experiment):
         self.pm_ppol = None
         self.pm_xpol = None
         self.ps = None
-
+        self.voa = None
         self.data = None
 
         if not self.check_necessary_instruments(instrument_list):
@@ -84,6 +103,8 @@ class PER_wavelength_sweep(Experiment):
             # if isinstance(instr, KeysightE36106B):
             if isinstance(instr, Keithley2635A):
                 self.ps = instr
+            if isinstance(instr, AgilentE3633A):
+                self.voa = instr
 
         if (self.pm_ppol is not None) and (self.pm_xpol is not None) and (self.ps is not None):
             return True
@@ -116,18 +137,12 @@ class PER_wavelength_sweep(Experiment):
 
         VCSEL_wavelength = params["VCSEL_wavelength"]
         voltage = params["voltage"]
+        if self.voa is not None:
+            voa_set = params["voa_set"]
 
         # Set power meter wavelengths
-        attribute = c_int16(0) #set wavelength
-        # meas_xpol_wavelength = c_double()
-        # meas_ppol_wavelength = c_double()
+        # attribute = c_int16(0) #set wavelength
 
-        # self.pm_xpol.getWavelength(attribute, byref(meas_xpol_wavelength))
-        # self.pm_ppol.getWavelength(attribute, byref(meas_ppol_wavelength))
-        # if meas_ppol_wavelength is not VCSEL_wavelength:
-        #     self.pm_ppol.setWavelength(c_double(VCSEL_wavelength))
-        # if meas_xpol_wavelength is not VCSEL_wavelength:
-        #     self.pm_xpol.setWavelength(c_double(VCSEL_wavelength))
 
         # print('Measured VCSEL pm wavelength is %d nm' % meas_xpol_wavelength.value)
         ppol_power_list = []
@@ -137,6 +152,8 @@ class PER_wavelength_sweep(Experiment):
         # Sweep VOA voltage, set power meter wavelength and get power
         #Set first voltage and allow time to settle
         self.ps.set_voltage(voltage[0])
+        if self.voa is not None:
+            self.voa.set_voltage(voa_set[0])
         time.sleep(1)
 
         for (ind, volt) in enumerate(voltage):
@@ -151,6 +168,9 @@ class PER_wavelength_sweep(Experiment):
             print('Setting power supply voltage to %.4f V...' % volt)
             # Set the voltage
             self.ps.set_voltage(volt)
+            # if params["voa_set"] is not None:
+            if self.voa is not None:
+                self.voa.set_voltage(voa_set[ind])
             time.sleep(1)
 
             meas_volt = self.ps.measure_voltage()
@@ -189,6 +209,8 @@ class PER_wavelength_sweep(Experiment):
                 writer.writerow(ppol_power_list)  #[W]
                 writer.writerow(xpol_power_list)  #[W]
                 writer.writerow(PER) #[dB]
+                if self.voa is not None:
+                    writer.writerow(voa_set)  #[V]
 
         self.data = [meas_volt_list, PER]
 
@@ -260,35 +282,46 @@ if __name__ == '__main__':
 
     # ------------------------------------------------------------
     # SAFETY LIMITS
-    i_limit = 100e-9 #current limit
+    i_limit = 10e-9 #current limit
 
     # POWER METER SETTINGS
     # Check that power meter sensors (declared as global variables up top) are accurate
     # Note: pump sensor and VCSEL sensor can be the same type
-    pump_wavelength = 1038 #nm
+    pump_wavelength = 1076 #nm
 
     #OTHER DEVICE PARAMETERS
-    device ='Dev1a_25C_CW5mW_pulse_2'
+    wavvolt_dir = os.path.join(os.getcwd(), "wavvolt")
+    delayvolt_dir = os.path.join(os.getcwd(), "delayvolt")
+
+    device ='dev1b_SS_delayvolt13_CW115.7mA_2'
 
     # EXPERIMENT PARAMETERS
-    pump_power = 3.7 # [mW]
-    IL = 0.27
-    # start_voltage = 0 # [V] Start tuning voltage in sweep
-    # end_voltage = 70  # [V] End tuning voltage in sweep
-    # increment = 1 # [V]
-    # if end_voltage > 0:
-    #     volt_list = np.arange(start_voltage, end_voltage+1, increment)
-    # elif end_voltage < 0:
-    #     volt_list = np.arange(start_voltage, end_voltage-1, -increment)
-    # print(volt_list)
-    # wavvolt_file = "wavvolt_Dev1a_25C_OEland1038_2.31mW"
-    wavvolt_file = "wavvolt_Dev1a_25C_CW976_5.0mW"
-    [volt_list, VCSEL_wavelength] = load_wavvolt(wavvolt_file)
+    vary_delay = 1
+    pump_power = 0#14 # [mW]
+    IL = 0.5#0.50
+
+    wavvolt_file = "wavvolt13_0-72.2V_dev1b_OE1076CW115.7mA_2025-6-2"
+    delayvolt_file = "delayvolt13"
+    fwname = os.path.join(wavvolt_dir, wavvolt_file)
+
+
+    [volt_list, VCSEL_wavelength] = load_wavvolt(fwname)
+    if vary_delay:
+        [VOA_interp, VCSEL_interp] = load_delayvolt(delayvolt_dir, delayvolt_file)
+        voa_set = interp_VOA(volt_list, VOA_interp, VCSEL_interp)
+        voa = AgilentE3633A()
+        voa.initialize()
+    else:
+        voa_set = None
+
+    # VCSEL_wavelength = VCSEL_wavelength[volt_list < end_voltage]
+    # volt_list = volt_list[volt_list < end_voltage]
+    print(volt_list)
     # ------------------------------------------------------------
 
     # INSTRUMENTS
     # ps = KeysightE36106B(current_limit=i_limit)
-    ps = Keithley2635A(current_compliance=100e-9, voltage_compliance=81)
+    ps = Keithley2635A(current_compliance=i_limit, voltage_compliance=-76)
     pm1 = ThorlabsPowerMeter()
     pm2 = ThorlabsPowerMeter()
 
@@ -304,8 +337,9 @@ if __name__ == '__main__':
     file_name = "PER_%s_%d-%dV_GS%dnm_%2.3fmW" % (device, volt_list[0], volt_list[-1], pump_wavelength, pump_power*IL) # Filename where to save csv data
 
     # SET UP THE EXPERIMENT
-    instr_list = [pm1, pm2, ps]
-    params = {"xpol_sensor": XPOL_SENSOR, "ppol_sensor": PPOL_SENSOR, "VCSEL_wavelength": VCSEL_wavelength*1e9, "voltage": volt_list}
+    instr_list = [pm1, pm2, ps, voa]
+    params = {"xpol_sensor": XPOL_SENSOR, "ppol_sensor": PPOL_SENSOR, "VCSEL_wavelength": VCSEL_wavelength * 1e9,
+                  "voltage": volt_list, "voa_set": voa_set}
     exp = PER_wavelength_sweep(instr_list)
 
     # RUN IT

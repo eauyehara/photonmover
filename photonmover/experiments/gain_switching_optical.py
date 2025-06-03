@@ -156,8 +156,6 @@ class gain_switching_optical(Experiment):
         print('Finished gain switching experiment')
         print('-----------------------------')
 
-
-
         # Save the parameters in a .mat file
         time_tuple = time.localtime()
         params_filename = "%s_params_%s_%.1f-%0.1fmW_%d-%d-%d.mat" % (
@@ -177,7 +175,9 @@ class gain_switching_optical(Experiment):
         # units: pump_power_list: [W], VOA_voltage_list: [V], pump_wavelength: [nm], tuning_voltage: [V], fiber_coupling efficiency: [], 'num_avg': [#]
 
         self.data = [pump_power_list, trace_peak_list]
-        return [pump_power_list, trace_peak_list]
+        print(np.array(pump_power_list).shape)
+        print(np.array(np.array(trace_peak_list)))
+        return [np.array(pump_power_list), np.array(trace_peak_list)]
     
     def required_params(self):
         """
@@ -283,32 +283,32 @@ if __name__ == '__main__':
     i_limit = 10e-9#current limit
 
     # POWER METER SETTINGS
-    pump_wavelength = 1038  #nm
+    pump_wavelength = 1076  #nm
 
     # SPECIFY DETECTOR ("osa" or "osc")
     detector = "osc"
 
     # OSCILLOSCOPE PARAMETERS
-    num_avg = 64
+    num_avg = 16
 
     # OSA PARAMETERS
     RBW = 0.1 #nm
 
     #DEVICE PARAMETERS
-    device = 'Dev1a_5mW'
-    tuning_voltage = 80#12  # [V]
+    device = 'dev1b-CW92mA'
+    tuning_voltage = 88.6   # [V]
 
     # COLLECTION BENCH PARAMETERS
-    fiber_coupling_efficiency = 0.715
-    IL = 0.27 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
+    fiber_coupling_efficiency = 1
+    IL = 0.54 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*100 - scales 1% tap output to actual input to VCSEL fiber
 
     # EXPERIMENT PARAMETERS
-    init_voltage = 3.5 #2.5 #2.8 #2.46 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 2.7 #1.8 #2.2 #1.6  # [V] Maximum transmission on VOA
+    init_voltage = 3.1 #2.5 #2.8 #2.46 #.99  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
+    end_voltage = 2.4 #1.8 #2.2 #1.6  # [V] Maximum transmission on VOA
     num_points = 15  # Number of points between init and end current
     VOA_voltage = np.linspace(init_voltage, end_voltage, num_points)
 
-    # ------------------------------------------------------------
+    # -----------------------------------------------------------
 
     # INSTRUMENTS
     ps = AgilentE3633A(current_limit=i_limit)

@@ -109,12 +109,12 @@ class praevium_map_wavelength(Experiment):
         print('-----------------------------')
 
         #Ramp back to initial voltage
-        reverse_voltage_list = list(voltage_list)
-        reverse_voltage_list.reverse()
-        reverse_voltage_str = str(reverse_voltage_list).replace('[', '{')
-        reverse_voltage_str = reverse_voltage_str.replace(']', '}')
-
-        ps.linear_volt_sweep(volt_list=reverse_voltage_str, settling_time=.3, num_points=len(reverse_voltage_list))
+        # reverse_voltage_list = list(voltage_list)
+        # reverse_voltage_list.reverse()
+        # reverse_voltage_str = str(reverse_voltage_list).replace('[', '{')
+        # reverse_voltage_str = reverse_voltage_str.replace(']', '}')
+        #
+        # ps.linear_volt_sweep(volt_list=reverse_voltage_str, settling_time=.3, num_points=len(reverse_voltage_list))
 
 
         if filename is not None:
@@ -143,7 +143,8 @@ class praevium_map_wavelength(Experiment):
                     time_tuple[2])
 
                 io.savemat(params_filename, {'osa_settings_list': osa_settings_list,
-                                             'voltage_list': voltage_list
+                                             'voltage_list': voltage_list,
+                                             'meas_volt_list': meas_volt_list
                                              })
 
                 wavvolt_filename = "%s_%dC_%s_%3.2fmW" % (
@@ -247,26 +248,26 @@ class Window(QtWidgets.QMainWindow):
 if __name__ == '__main__':
     # ------------------------------------------------------------
     # SAFETY LIMITS
-    i_limit = 100e-9  # current limit
+    i_limit = 10e-9  # current limit
 
     # OTHER PARAMETERS
-    device = 'Dev1a'
-    pump_laser = 'OEland1076' #'OEland1038' #'CW976'
-    pump_power = 11 #mW
-    IL = 0.52
+    device = 'dev1b'
+    pump_laser = 'OE1076CW115.7mA' #'OEland1038' #'CW976'
+    pump_power = 0 #10.2 #mW
+    IL = 0.62#0.52
     RBW = 0.1 #nm
-    temp = 25 #C
+    temp = 15 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 70 # [V]
+    end_voltage = 72 # [V]
     increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------
 
     # INSTRUMENTS
     # ps = KeysightE36106B(current_limit=i_limit)
-    ps = Keithley2635A(current_compliance=100e-9, voltage_compliance=81) #A, V
+    ps = Keithley2635A(current_compliance=i_limit, voltage_compliance=67) #A, V
     osa = HP70951B()
 
     # Initialize instruments

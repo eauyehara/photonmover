@@ -272,24 +272,24 @@ if __name__ == '__main__':
 
     # ------------------------------------------------------------
     # SAFETY LIMITS
-    i_limit = 1e-9 #current limit [A]
+    i_limit = 10e-9 #current limit [A]
 
     # POWER METER SETTINGS
     # Check that power meter sensors (declared as global variables up top) are accurate
     # Note: pump sensor and VCSEL sensor can be the same type
-    pump_wavelength = 1038 #nm
-    VCSEL_wavelength = 1340  #nm
+    pump_wavelength = 976 #nm
+    VCSEL_wavelength = 976 #nm
 
-    IL = 0.27 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*99% - scales 1% tap output to actual input to VCSEL fiber
+    IL = 0.55#0.54 #insertion loss measured as (WDM 980/1310 output) / (1% tap)*99% - scales 1% tap output to actual input to VCSEL fiber
 
     #OTHER DEVICE PARAMETERS
-    device = 'Dev1a_5mW'
-    tuning_voltage = 80 # [V]
+    device = 'CW976-145mA_VOAlow' #'Dev1b_CW92mA'
+    tuning_voltage = 0#88.6# [V]
 
     # EXPERIMENT PARAMETERS
     init_voltage = 4.5  # [V] Minimum transmission on VOA (Note: when set to 5V, AgilentE3633A momentarily exceeds current limit when turning output on)
-    end_voltage = 2.2 #2.24 #1.653  # [V] Maximum transmission on VOA
-    num_points = 250  # Number of points between init and end current
+    end_voltage = 1.0 #2.24 #1.653  # [V] Maximum transmission on VOA
+    num_points = 200  # Number of points between init and end current
     volt_list = np.linspace(init_voltage, end_voltage, num_points)
     # ------------------------------------------------------------
 
