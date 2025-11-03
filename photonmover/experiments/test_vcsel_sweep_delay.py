@@ -1,9 +1,11 @@
-from photonmover.Interfaces.Experiment import Experiment
-from photonmover.utils.plot_utils import plot_graph
+# from photonmover.Interfaces.Experiment import Experiment
+# from photonmover.utils.plot_utils import plot_graph
+
 
 # Interfaces/instruments necessary for the experiment
 # - You use an Interface if any instrument of that category can be used
 # - You use a specific instrument if you can only use that specific model
+#%%
 from photonmover.instruments.Oscilloscopes.HP54750A import HP54750A
 from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
 from photonmover.instruments.Power_Supplies.AgilentE3633A import AgilentE3633A
@@ -17,6 +19,8 @@ import csv
 from scipy import io
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
+
+#%%
 
 def load_delayvolt(delay_dir,filename):
     """
@@ -35,7 +39,7 @@ def interp_VOA(VCSEL_set, VOA_interp, VCSEL_interp):
         VOA_set.append(VOA_interp[ind])
     return  np.array(VOA_set)
 
-class vcsel_sweep_delay(Experiment):
+class vcsel_sweep_delay():
 
     def __init__(self, instrument_list, visa_lock=None):
         """
@@ -212,21 +216,21 @@ class vcsel_sweep_delay(Experiment):
         """
 
         return ["voltage_list", "voa_set", "device", "pump_laser","pump_power","temp"]
+#%%
 
+    # def plot_data(self, canvas_handle, data=None):
 
-    def plot_data(self, canvas_handle, data=None):
+    #     if data is None:
+    #         if self.data is not None:
+    #             data = self.data
+    #         else:
+    #             raise ValueError('plot_data was called before performing the experiment or providing data')
 
-        if data is None:
-            if self.data is not None:
-                data = self.data
-            else:
-                raise ValueError('plot_data was called before performing the experiment or providing data')
+    #     voltage = data[0]
+    #     delay = data[1]
 
-        voltage = data[0]
-        delay = data[1]
-
-        plot_graph(x_data=voltage, y_data=delay, canvas_handle=canvas_handle, xlabel='Voltage (V)',
-                   ylabel='Peak Delay (ps)', title='Tuning Curve', legend=None)
+    #     plot_graph(x_data=voltage, y_data=delay, canvas_handle=canvas_handle, xlabel='Voltage (V)',
+    #                ylabel='Peak Delay (ps)', title='Tuning Curve', legend=None)
 
 import sys
 # from pyqtgraph.Qt import QtGui, QtCore
