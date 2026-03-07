@@ -13,18 +13,30 @@ osa = HP70951B()
 osa.initialize()
 
 # %% Configure osa
-ref_level = Q_(-35, 'dBm') #[dBm]
+# ADD CODE TO SET TRACE LENGTH TO 2048 FROM 800
+
+ref_level = Q_(-25, 'dBm') #[dBm]
 rbw = 1 * u.nm #[nm]
+vbw = 400 * u.Hz
 sensitivity = Q_(-50, 'dBm') #[dBm]
 span = None #800 * u.nm 
 center = None #1300 * u.nm 
 start_wl = 600 * u.nm 
 end_wl = 1700 * u.nm 
 
+# ref_level = Q_(-35, 'dBm') #[dBm]
+# rbw = 0.1 * u.nm #[nm]
+# vbw = 100 * u.Hz
+# sensitivity = Q_(-50, 'dBm') #[dBm]
+# span = None #800 * u.nm 
+# center = None #1300 * u.nm 
+# start_wl = 1550 * u.nm 
+# end_wl = 1700 * u.nm 
+
 osa.set_wl_axis(start_wl=f"{start_wl.to(u.nm).m} NM", end_wl=f"{end_wl.to(u.nm).m} NM")
 osa.set_reference_level(ref_value=ref_level.m, ref_pos=None)
 osa.set_sensitivity(sens=sensitivity.m)
-osa.set_acq_bandwidth(res_bw = f"{rbw.to(u.nm).m} NM")
+osa.set_acq_bandwidth(res_bw = f"{rbw.to(u.nm).m} NM", video_bw = f"{vbw.to(u.Hz).m} HZ")
 
 #%% Record OSA NOISE FLOOR trace and osa parameters.  Save to hdf5 >>>>>>>>>>>>>>>>>>>
 
@@ -51,9 +63,10 @@ dump_hdf5({
     open_mode='x'
 )
 
+
 #%% Record PROBE-to-PROBE trace and osa parameters.  Save to hdf5 >>>>>>>>>>>>>>>>>>>
 
-fname = "supercont_probe-to-probe_3"
+fname = "supercont_probe-to-probe_noOBJ"
 # fname = "supercont_atten"
 
 data_dir = Path.home() / 'OneDrive\Documents\data\probe_station'
@@ -78,8 +91,9 @@ dump_hdf5({
 )
 
 #%% Record DEVICE trace and osa parameters. Save to hdf5 >>>>>>>>>>>>>>>>>>>>>
-fname = "supercont_Wafer8_R2C3_W2.0um_ref"
-# fname = "test"
+# fname = "supercont_Wafer8_R2C3_spiral2.3cm_W0.8um_rbw1nm_600-1700nm_vbw100Hz_1mW"
+# fname = "SBS15A_1550_AC050-008-C_SiPM_rbw1nm_600-1700nm_vbw400Hz"
+fname = "Alluxa830nm_LPF_600-1700nm"
 
 data_dir = Path.home() / 'OneDrive\Documents\data\probe_station'
 time_stamp = new_timestamp()
@@ -101,9 +115,13 @@ dump_hdf5({
     fpath=fpath, 
     open_mode='x'
 )
-
+fig, ax = plt.subplots(1, 1, figsize=(6,4), tight_layout=True)
+ax.plot(wavs*1e9, amps)
+ax.plot(wavs1*1e9, amps1, color='silver')
+ax.set_ylabel('Power(dBm)')
+ax.set_xlim((min(wavs)*1e9, max(wavs)*1e9))
 #%% Load probe-to-probe from file
-fname = "supercont_probe-to-probe_2025-10-21-14-26-53.h5"
+fname = "supercont_probe-to-probe_noOBJ_2026-03-03-14-39-19.h5"
 fpath = data_dir / Path(fname)
 ds = load_hdf5(fpath=fpath)
 

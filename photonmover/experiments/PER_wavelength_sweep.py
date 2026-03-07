@@ -293,15 +293,15 @@ if __name__ == '__main__':
     wavvolt_dir = os.path.join(os.getcwd(), "wavvolt")
     delayvolt_dir = os.path.join(os.getcwd(), "delayvolt")
 
-    device ='dev1b_SS_delayvolt13_CW115.7mA_2'
+    device ='dev1b_SS_delayvolt14_CW156.2mA_7'
 
     # EXPERIMENT PARAMETERS
     vary_delay = 1
     pump_power = 0#14 # [mW]
     IL = 0.5#0.50
 
-    wavvolt_file = "wavvolt13_0-72.2V_dev1b_OE1076CW115.7mA_2025-6-2"
-    delayvolt_file = "delayvolt13"
+    wavvolt_file = "wavvolt14_0-72V_dev1b_OE1076CW156.2mA_2025-10-2"
+    delayvolt_file = "delayvolt14"
     fwname = os.path.join(wavvolt_dir, wavvolt_file)
 
 

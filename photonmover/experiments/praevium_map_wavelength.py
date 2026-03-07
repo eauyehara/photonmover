@@ -252,22 +252,22 @@ if __name__ == '__main__':
 
     # OTHER PARAMETERS
     device = 'dev1b'
-    pump_laser = 'OE1076CW115.7mA' #'OEland1038' #'CW976'
+    pump_laser = 'OE1076CW156mA_2.2V' #'OEland1038' #'CW976'
     pump_power = 0 #10.2 #mW
-    IL = 0.62#0.52
+    IL = 1#0.62#0.52
     RBW = 0.1 #nm
     temp = 15 #C
 
     # EXPERIMENT PARAMETERS
     init_voltage = 0  # [V]
-    end_voltage = 72 # [V]
+    end_voltage = 61 # [V]
     increment = 1  # Voltage increment
     voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
     # ------------------------------------------------------------
 
     # INSTRUMENTS
     # ps = KeysightE36106B(current_limit=i_limit)
-    ps = Keithley2635A(current_compliance=i_limit, voltage_compliance=67) #A, V
+    ps = Keithley2635A(current_compliance=i_limit, voltage_compliance=73) #A, V
     osa = HP70951B()
 
     # Initialize instruments

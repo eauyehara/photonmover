@@ -2,7 +2,8 @@
 from photonmover.instruments.Oscilloscopes.HP54750A import HP54750A
 from photonmover.instruments.Source_meters.Keithley2635A import Keithley2635A
 from photonmover.instruments.Power_Supplies.AgilentE3633A import AgilentE3633A
-from photonmover.instruments.Optical_spectrum_analyzers.HP70951B import HP70951B
+# from photonmover.instruments.Optical_spectrum_analyzers.HP70951B import HP70951B
+from photonmover.instruments.Optical_spectrum_analyzers.YokogawaAQ6375 import YokogawaAQ6375
 
 # General imports
 import time
@@ -60,7 +61,8 @@ def perform_experiment(instrument_dict, params, filename=None):
         trace_array = np.array(np.zeros((len(voltage_list), int(trace_len))))
         x_axis = t[0]
         t_sleep = 10
-    elif isinstance(det, HP70951B):
+    # elif isinstance(det, HP70951B):
+    elif isinstance(det, YokogawaAQ6375):
         [wavelength, _] = det.read_data()
         trace_len = np.array(wavelength).shape[0]
         trace_array = np.array(np.zeros((len(voltage_list), int(trace_len))))
@@ -88,7 +90,8 @@ def perform_experiment(instrument_dict, params, filename=None):
             [_, waveform] = det.read_waveform([1])
             trace_array[ind, :] = np.reshape(np.array(waveform), (1, int(trace_len)))
 
-        elif isinstance(det, HP70951B):
+        # elif isinstance(det, HP70951B):
+        elif isinstance(det, YokogawaAQ6375):
             full_filename = params["detector"] + "_" + filename
             [_, waveform] = det.read_data()
             trace_array[ind, :] = np.reshape(np.array(waveform), (1, int(trace_len)))
@@ -150,7 +153,7 @@ i_limit = 10e-9  # current limit
 
 # OTHER PARAMETERS
 detector = 'osc'
-device = 'dev1b_delayvolt16_noBOA_04'
+device = 'dev1b_delayvolt17'
 pump_laser = 'OE1076CW159mA' #'OEland1076' #'OEland1038' #'CW976'
 pump_power = 0 #mW
 IL = 0.62
@@ -159,21 +162,24 @@ temp = 15 #C
 
 # EXPERIMENT PARAMETERS
 init_voltage = 0  # [V]
-end_voltage = 60 # [V]
+end_voltage = 69 # [V]
 increment = 1  # Voltage increment
 voltage_list = np.arange(init_voltage, end_voltage+increment, increment) #end_voltage+1 or will stop at end_voltage-1
-voltage_list = np.append(voltage_list, [60.5, 61, 61.5, 61.9])
+voltage_list = np.concatenate((voltage_list, [69.5, 70, 70.5, 71, 71.3, 71.6]))
+
 print(voltage_list)
-delayvolt_file = "delayvolt16"
+delayvolt_file = "delayvolt17"
 delay_dir = os.path.join(os.getcwd(),"delayvolt")
 # ------------------------------------------------------------
-#%%
+#%% Run experiment
+
 # INSTRUMENTS
 ps = Keithley2635A(current_compliance=10e-9, voltage_compliance=73) #A, V
 if detector == "osc":
     det = HP54750A()
 elif detector == "osa":
-    det = HP70951B()
+    # det = HP70951B()
+    det = YokogawaAQ6375()
 # osc = HP54750A()
 voa = AgilentE3633A(current_limit=i_limit)
 
