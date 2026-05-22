@@ -66,7 +66,7 @@ dump_hdf5({
 
 #%% Record PROBE-to-PROBE trace and osa parameters.  Save to hdf5 >>>>>>>>>>>>>>>>>>>
 
-fname = "supercont_probe-to-probe_noOBJ"
+fname = "supercont_probe-to-probe_OBJ_mirror"
 # fname = "supercont_atten"
 
 data_dir = Path.home() / 'OneDrive\Documents\data\probe_station'
@@ -93,7 +93,9 @@ dump_hdf5({
 #%% Record DEVICE trace and osa parameters. Save to hdf5 >>>>>>>>>>>>>>>>>>>>>
 # fname = "supercont_Wafer8_R2C3_spiral2.3cm_W0.8um_rbw1nm_600-1700nm_vbw100Hz_1mW"
 # fname = "SBS15A_1550_AC050-008-C_SiPM_rbw1nm_600-1700nm_vbw400Hz"
-fname = "Alluxa830nm_LPF_600-1700nm"
+# fname = "LP830nm_Semrock1000_600-1700nm_realign"
+# fname = "SBS19A_W2_00_testwg2_600-1700nm_Bcarotene"
+fname = "double_BSW29R_Nikon20x_noRefArm_1"
 
 data_dir = Path.home() / 'OneDrive\Documents\data\probe_station'
 time_stamp = new_timestamp()
@@ -121,16 +123,36 @@ ax.plot(wavs1*1e9, amps1, color='silver')
 ax.set_ylabel('Power(dBm)')
 ax.set_xlim((min(wavs)*1e9, max(wavs)*1e9))
 #%% Load probe-to-probe from file
-fname = "supercont_probe-to-probe_noOBJ_2026-03-03-14-39-19.h5"
-fpath = data_dir / Path(fname)
-ds = load_hdf5(fpath=fpath)
+sample_dir = "BB_dispersion_setup"
+fname_probe = "supercont_probe-to-probe_OBJ_mirror_2026-04-20-01-46-32.h5"
+fname_noise = "supercont_osa_noiseFloor_2026-04-20-01-08-49.h5"
 
-# fname2 = "supercont_atten_2025-10-17-18-49-10.h5"
-# fpath2 = data_dir / Path(fname2)
-# ds2 = load_hdf5(fpath=fpath2)
+fpath_probe = data_dir / sample_dir / Path(fname_probe)
+ds_probe = load_hdf5(fpath=fpath_probe)
 
-# amps=ds2["amplitude"].m
-# wavs=ds2["wavelength"].m
+fpath_noise = data_dir / sample_dir / Path(fname_noise)
+ds_noise = load_hdf5(fpath=fpath_noise)
+
+#%% Plot normalized transmission from file
+#Assuming wavelength axis same for probe-to-probe and device measurments
+fig, ax0 = plt.subplots(1, 1, figsize=(5,4), tight_layout=True)
+# ax0.plot(ds_noise["wavelength"].to(u.nm), ds_noise["psd"], color="silver")
+ymin = -80
+ymax = 10
+
+T = psd - ds_probe["psd"]
+ax0.plot(wavs*1e9, T)
+ax0.plot(wavs*1e9, ds_noise["psd"] - ds_probe["psd"], color="silver")
+# ax0.vlines(1000, ymin, ymax, 'k', 'dotted')
+# ax0.vlines(1550, ymin, ymax, 'k', 'dotted')
+ax0.vlines(1520, ymin, ymax, 'k', 'dotted')
+ax0.vlines(1064, ymin, ymax, 'k', 'dotted')
+ax0.vlines(1383, ymin, ymax, 'k', 'dotted')
+# ax0.vlines(1300, ymin, ymax, 'k', 'dotted')
+ax0.set_ylim((ymin,ymax))
+ax0.set_ylabel('Transmission (dB)')
+ax0.set_xlabel("Wavelength (nm)")
+
 #%% Plot device Transmission
 
 #Assuming wavelength axis same for probe-to-probe and device measurments

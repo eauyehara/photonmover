@@ -56,7 +56,7 @@ def dump_hdf5(ds,fpath,open_mode='a'):
                     f.attrs[k] = v
         f.flush()
 
-def load_hdf5(fpath=None,dir=None,filter=None,sim_index=None):
+def load_hdf5(fpath=None,dir=None,filter=None,sim_index=None, verbose=True):
     if fpath is None:
         # sim_id = ''.join(str(ind)+'-' for ind in self.param_index_combinations[sim_index])[:-1]
         file_list =  glob(os.path.normpath(dir)+os.path.normpath('/'+ sim_id + '*'))
@@ -75,14 +75,16 @@ def load_hdf5(fpath=None,dir=None,filter=None,sim_index=None):
             print('importing ' + h5_ds_name + '...')
             ds[h5_ds_name] = _load_hdf5_item(f[h5_ds_name])
         for key,val in f.attrs.items():
-            print('importing attr ' + key + '...')
+            if verbose:
+                print('importing attr ' + key + '...')
             # try:
             #     ds[key] = u.Quantity.from_tuple(val)
             # except:
             #     ds[key] = val
             if "_".join([key,"units"]) in f.attrs.keys():
                 units_str = str(f.attrs["_".join([key,"units"])])
-                print(units_str)
+                if verbose:
+                    print(units_str)
                 ds[key] = u.Quantity(val,units_str)
             elif key.split("_")[-1]=="units":
                 pass
